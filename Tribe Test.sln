@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35219.272
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GooberFrost", "test mod\GooberFrost.csproj", "{030FF4F8-8067-4B1B-9675-8D36C3C23949}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{030FF4F8-8067-4B1B-9675-8D36C3C23949}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{030FF4F8-8067-4B1B-9675-8D36C3C23949}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{030FF4F8-8067-4B1B-9675-8D36C3C23949}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{030FF4F8-8067-4B1B-9675-8D36C3C23949}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7FC22D39-8F1C-421C-8B64-66A94B164345}
+	EndGlobalSection
+EndGlobal
