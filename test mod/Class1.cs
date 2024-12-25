@@ -168,8 +168,7 @@ public partial class Goobers : WildfrostMod
         randomSprites2.Add(GetSprite("REALCHEST5.png"));
         randomSprites2.Add(GetSprite("REALCHEST6.png"));
 
-
-
+      
 
 
 
@@ -437,14 +436,14 @@ public partial class Goobers : WildfrostMod
         this.CreateIcon("Bleedingicon", ImagePath("Bleedingicon.png").ToSprite(), "bleed", "frost", Color.white, shadowColor: new Color(0, 0, 0), new KeywordData[] { Get<KeywordData>("bleed") })
             .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
 
-        this.CreateIconKeyword("fear", "Fear", "When <keyword=fear> reaches 4, flee to the discard pile. If a Leader's <keyword=fear> reaches 12 destroy self.| Clunkers cannot be inflicted with this status.", "fearicon"
+        this.CreateIconKeyword("fear", "Fear", "When <keyword=fear> reaches 4, flee to the discard pile. If a Leader's <keyword=fear> reaches 10 destroy self.| Clunkers cannot be inflicted with this status.", "fearicon"
 , new Color(1f, 1f, 1f), new Color(0.8f, 0f, 0.9f), new Color(0f, 0f, 0f));
 
         //make sure you icon is in both the images folder and the sprites subfolder
         this.CreateIcon("fearicon", ImagePath("fearicon.png").ToSprite(), "fear", "frost", Color.white, shadowColor: new Color(0, 0, 0), new KeywordData[] { Get<KeywordData>("fear") })
             .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
 
-        this.CreateIconKeyword("fear2", "Fear(for Leaders)", "If <keyword=fear2> reaches 12 destroy self.", "fearicon"
+        this.CreateIconKeyword("fear2", "Fear(for Leaders)", "If <keyword=fear2> reaches 10 destroy self.", "fearicon"
 , new Color(1f, 1f, 1f), new Color(0.8f, 0f, 0.9f), new Color(0f, 0f, 0f));
 
         //make sure you icon is in both the images folder and the sprites subfolder
@@ -9184,7 +9183,7 @@ var realData = data as FEARONE;
 realData.removeOnDiscard = true;
 realData.affectedBySnow = false;
 realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-realData.requiredAmount = 12;
+realData.requiredAmount = 10;
 realData.eventPriority = 1000;
 realData.whenAppliedTypes = new string[1] { "fear2" };
 realData.whenAppliedToFlags = ApplyToFlags.Self;
@@ -10446,7 +10445,7 @@ new StatusEffectDataBuilder(this)
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
     .Create<StatusEffectApplyXWhenHit>("Borrowed Ashi")
-   .WithText("When hit, gain x8 <keyword=blings> equal damage taken.")
+   .WithText("When hit, gain x9 <keyword=blings> equal damage taken.")
           .SubscribeToAfterAllBuildEvent(data =>
           {
               var realData = data as StatusEffectApplyXWhenHit;
@@ -10455,7 +10454,7 @@ new StatusEffectDataBuilder(this)
                   realData.effectToApply = Get<StatusEffectData>("Gain Gold");
                   realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
                   realData.targetMustBeAlive = false;
-                  realData.equalAmountBonusMult = 7;
+                  realData.equalAmountBonusMult = 8;
 
               }
           }));
@@ -11252,6 +11251,404 @@ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomAlly;
 
 }));
 
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+ .Create<StatusEffectWhileActiveXWithBoostableScriptableAmount>("Bom Frenzy")
+ .WithText("Gain <keyword=frenzy> equal to the amount of units with <keyword=weakness>")
+ .WithStackable(true)
+ .WithCanBeBoosted(true)
+ .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+ {
+     var se = data as StatusEffectWhileActiveXWithBoostableScriptableAmount;
+     se.scriptableAmount = new ScriptableAlliesWithStatus() { allies = true, enemies = true, status = Get<StatusEffectData>("Weakness") };
+     se.effectToApply = Get<StatusEffectData>("MultiHit");
+     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+     se.eventPriority = 100;
+
+ }));
+
+        
+
+
+                 statusEffects.Add(
+      StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Bom before attack")
+     .WithText("Before an enemy attacks, apply <{a}><keyword=weakness> to them")                                                     //Makes a copy of the Summon Fallow effect
+     .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
+     {
+         ((StatusEffectApplyXWhenEnemiesAttack)data).effectToApply = TryGet<StatusEffectData>("Weakness"); //Alternatively, I could've put TryGet<CardData>("mhcdc9.wildfrost.tutorial.shadeSnake") or TryGet<CardData>(Extensions.PrefixGUID("shadeSnake",this)) or the Get variants too
+                                                                                                                   //This is because TryGet will try to prefix the name with your GUID. 
+     })                                                                          //If that fails, then it uses no GUID-prefixing.
+      );
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+           .Create<StatusEffectApplyXWhenAnyoneTakesDamage>("Heal when bom")
+           .WithText("When anyone takes damage, increase max <keyword=health> by <{a}>.")
+           .WithStackable(true)
+           .WithCanBeBoosted(true)
+           .SubscribeToAfterAllBuildEvent(data =>
+           {
+               var realData = data as StatusEffectApplyXWhenAnyoneTakesDamage;
+
+               realData.eventPriority = 99;
+               realData.targetMustBeAlive = false;
+               realData.effectToApply = TryGet<StatusEffectData>("Increase Max Health");
+               realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+               
+
+
+
+           }));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenHit>("Cleanser row")
+.WithText("When hit, cleanse all enemies in the row")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+  var realData = data as StatusEffectApplyXWhenHit;
+
+  realData.effectToApply = TryGet<StatusEffectData>("Cleanse");
+  realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.EnemiesInRow;
+  realData.eventPriority = 5;
+  realData.targetMustBeAlive = false;
+
+
+})
+);
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenHit>("Effect reduce on hit")
+.WithText("When hit, reduce own effects by <{a}>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+  var realData = data as StatusEffectApplyXWhenHit;
+
+  realData.effectToApply = TryGet<StatusEffectData>("Reduce Effects");
+  realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+  realData.eventPriority = 5;
+  realData.targetMustBeAlive = false;
+
+
+})
+);
+
+        statusEffects.Add(
+    StatusCopy("On Card Played Trigger RandomAlly", "Trigger highest attack")
+   .WithText("Trigger ally with highest <keyword=attack>.")                                       //Since this effect is on Shade Serpent, we modify the description shown.
+   .WithTextInsert("")                                                        //Makes a copy of the Summon Fallow effect
+   .SubscribeToAfterAllBuildEvent(data =>
+   {
+       var realData = data as StatusEffectApplyX;        //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
+
+       realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;   //Alternatively, I could've put TryGet<CardData>("mhcdc9.wildfrost.tutorial.shadeSnake") or TryGet<CardData>(Extensions.PrefixGUID("shadeSnake",this)) or the Get variants too
+       var script = ScriptableObject.CreateInstance<SelectScriptEntityHighestAttack>();
+       ((StatusEffectApplyX)data).selectScript = script;
+       //This is because TryGet will try to prefix the name with your GUID. 
+   })
+    //If that fails, then it uses no GUID-prefixing.
+    );
+
+        statusEffects.Add(
+StatusCopy("Summon Junk", "Summon Remnent")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+(data as StatusEffectSummon).summonCard = TryGet<CardData>("Remnent");
+
+})
+);
+        statusEffects.Add(
+            StatusCopy("Instant Summon Junk In Hand", "Instant Summon Remnent")
+                .SubscribeToAfterAllBuildEvent(data =>
+                {
+                    (data as StatusEffectInstantSummon).targetSummon = TryGet<StatusEffectData>("Summon Remnent") as StatusEffectSummon;
+                })
+        );
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantMultiple>("Remove From Deck NOW")
+.WithCanBeBoosted(false)
+.WithTextInsert("=")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+   var realData = data as StatusEffectInstantMultiple;
+
+   realData.effects = new StatusEffectInstant[]
+{
+     TryGet<StatusEffectInstant>("Sacrifice Ally"),
+     TryGet<StatusEffectInstant>("Remove"),
+     TryGet<StatusEffectInstant>("Instant Summon Remnent")
+};
+}
+
+   ));
+
+
+        statusEffects.Add(
+  new StatusEffectDataBuilder(this)
+  .Create<StatusEffectApplyXWhenHit>("Remove when Hit")
+  .WithText("When hit, gain <{a}> <keyword=sp>")
+  .WithStackable(true)
+  .WithCanBeBoosted(true)
+  .SubscribeToAfterAllBuildEvent(data =>
+  {
+      var realData = data as StatusEffectApplyXWhenHit;
+
+      realData.effectToApply = TryGet<StatusEffectData>("EXP");
+      realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+      realData.eventPriority = 5;
+      realData.targetMustBeAlive = false;
+
+
+
+  })
+  );
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenDrawn>("Shroom when drawn")
+.WithText("When drawn, apply <{a}> <keyword=shroom> to a random ally")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectApplyXWhenDrawn;
+
+ realData.effectToApply = TryGet<StatusEffectData>("Shroom");
+ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomAlly;
+
+})
+);
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenDrawn>("Damage when drawn")
+.WithText("When drawn, deal <{a}> damage to a random ally")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+  var realData = data as StatusEffectApplyXWhenDrawn;
+
+    realData.doesDamage = true;
+    realData.dealDamage = true;
+    realData.countsAsHit = true;
+  realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomAlly;
+
+})
+);
+
+        statusEffects.Add(
+StatusCopy("Summon Junk", "Summon Acid Skull")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    (data as StatusEffectSummon).summonCard = TryGet<CardData>("Acid Skull");
+})
+);
+
+
+        statusEffects.Add(
+                  new StatusEffectDataBuilder(this)
+                      .Create<StatusEffectInstantSummonInDeck>("Instant Summon Acid Skull")
+                      .WithCanBeBoosted(true)
+                       .SubscribeToAfterAllBuildEvent(data =>
+                       {
+                           var realData = data as StatusEffectInstantSummonInDeck;
+
+                           realData.targetSummon = TryGet<StatusEffectData>("Summon Acid Skull") as StatusEffectSummon;
+                           realData.summonPosition = StatusEffectInstantSummonInDeck.Position.DiscardPile;
+                           realData.canSummonMultiple = true;
+                       })
+                       );
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenHit>("Acid skull to discard")
+.WithText("When hit, adds <{a}> <card=goobers.Acid Skull> to your discard pile.")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectApplyXWhenHit;
+
+ realData.effectToApply = TryGet<StatusEffectData>("Instant Summon Acid Skull");
+ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+ realData.eventPriority = 5;
+ realData.targetMustBeAlive = false;
+
+
+})
+);
+
+        statusEffects.Add(
+          new StatusEffectDataBuilder(this)
+          .Create<StatusEffectInstantAddDeck>("Add Acid Skull")
+          .WithStackable(false)
+          .WithCanBeBoosted(false)
+          .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+          {
+              ((StatusEffectInstantAddDeck)data).card = Get<CardData>("Acid Skull");
+
+          })
+          );
+
+
+        statusEffects.Add(
+StatusCopy("Summon Junk", "Summon Blocker")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+  (data as StatusEffectSummon).summonCard = TryGet<CardData>("Blocker");
+})
+);
+
+
+        statusEffects.Add(
+                  new StatusEffectDataBuilder(this)
+                      .Create<StatusEffectInstantSummonInDeck>("Instant Summon Blocker")
+                      .WithCanBeBoosted(true)
+                       .SubscribeToAfterAllBuildEvent(data =>
+                       {
+                           var realData = data as StatusEffectInstantSummonInDeck;
+
+                           realData.targetSummon = TryGet<StatusEffectData>("Summon Blocker") as StatusEffectSummon;
+                           realData.summonPosition = StatusEffectInstantSummonInDeck.Position.DrawPile;
+                           realData.canSummonMultiple = true;
+                       })
+                       );
+
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+   .Create<StatusEffectApplyXWhenItemPlayed>("Top deck? where")
+   .WithText("When an item is played, adds <{a}> <card=goobers.Blocker> to the top of your draw pile.")
+   .WithCanBeBoosted(true)
+   .WithStackable(true)
+    .SubscribeToAfterAllBuildEvent(data =>
+    {
+        var realData = data as StatusEffectApplyXWhenItemPlayed;
+
+        realData.effectToApply = TryGet<StatusEffectData>("Instant Summon Blocker");
+        realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+        realData.eventPriority = 5;
+
+
+    })
+    );
+
+        statusEffects.Add(
+          new StatusEffectDataBuilder(this)
+          .Create<StatusEffectInstantAddDeck>("Add Blocker")
+          .WithStackable(false)
+          .WithCanBeBoosted(false)
+          .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+          {
+              ((StatusEffectInstantAddDeck)data).card = Get<CardData>("Blocker");
+
+          })
+          );
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenYAppliedToCustom>("Acid skull to deck")
+ .WithText("<keyword=sp> required 15 - Permanently adds a <card=goobers.Acid Skull> to your deck.")
+ .WithStackable(false)
+ .WithCanBeBoosted(false)
+ .SubscribeToAfterAllBuildEvent(data =>
+ {
+     var realData = data as StatusEffectApplyXWhenYAppliedToCustom;
+
+
+     realData.requiredAmount = 15;
+     realData.eventPriority = 50;
+     realData.whenAppliedTypes = new string[1] { "sp" };
+     realData.whenAppliedToFlags = ApplyToFlags.Self;
+     realData.effectToApply = TryGet<StatusEffectData>("Add Acid Skull");
+     realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+     realData.eventPriority = 5;
+     realData.targetMustBeAlive = false;
+
+
+
+
+ }));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenYAppliedToCustom>("Add Blocker to deck")
+    .WithText("<keyword=sp> required 10 - Permanently adds a <card=goobers.Blocker> to your deck.")
+    .WithStackable(false)
+    .WithCanBeBoosted(false)
+    .SubscribeToAfterAllBuildEvent(data =>
+    {
+        var realData = data as StatusEffectApplyXWhenYAppliedToCustom;
+
+
+        realData.requiredAmount = 10;
+        realData.eventPriority = 50;
+        realData.whenAppliedTypes = new string[1] { "sp" };
+        realData.whenAppliedToFlags = ApplyToFlags.Self;
+        realData.effectToApply = TryGet<StatusEffectData>("Add Blocker");
+        realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+        realData.eventPriority = 5;
+        realData.targetMustBeAlive = false;
+      
+
+
+    
+    }));
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenYAppliedToCustom>("Delete card when sp")
+      .WithText("<keyword=sp> required 20 - targets a random none <keyword=goobers.curse> card in your hand to remove from your deck permanently, then add a <card=goobers.Remnent> to your hand.")
+      .WithStackable(false)
+      .WithCanBeBoosted(false)
+      .SubscribeToAfterAllBuildEvent(data =>
+      {
+          var realData = data as StatusEffectApplyXWhenYAppliedToCustom;
+
+
+          realData.requiredAmount = 20;
+          realData.eventPriority = 50;
+          realData.whenAppliedTypes = new string[1] { "sp" };
+          realData.whenAppliedToFlags = ApplyToFlags.Self;
+          realData.effectToApply = TryGet<StatusEffectData>("Remove From Deck NOW");
+          realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomCardInHand;
+          realData.eventPriority = 5;
+          realData.targetMustBeAlive = false;
+          realData.applyConstraints = new TargetConstraint[]
+      {
+
+
+
+
+          new TargetConstraintHasTrait()
+          {
+              not = true,  trait = Get<TraitData>("Cursed")
+
+
+          }
+
+
+      };
+      })
+);
+
+
+
+
+
         //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
         //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
         //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -11259,6 +11656,250 @@ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomAlly;
         //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
         //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
         //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+        statusEffects.Add(
+StatusCopy("Summon Junk", "Summon Flipflop")
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+(data as StatusEffectSummon).summonCard = TryGet<CardData>("Flipflop");
+})
+);
+        statusEffects.Add(
+            StatusCopy("Instant Summon Junk In Hand", "Instant Flipflop")
+                .SubscribeToAfterAllBuildEvent(data =>
+                {
+                    (data as StatusEffectInstantSummon).targetSummon = TryGet<StatusEffectData>("Summon Flipflop") as StatusEffectSummon;
+                })
+        ); 
+
+                    statusEffects.Add(
+StatusCopy("Summon Junk", "Summon Icy Flipflop")
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    (data as StatusEffectSummon).summonCard = TryGet<CardData>("Icy Flipflop");
+})
+);
+        statusEffects.Add(
+            StatusCopy("Instant Summon Junk In Hand", "Instant Icy Flipflop")
+                .SubscribeToAfterAllBuildEvent(data =>
+                {
+                    (data as StatusEffectInstantSummon).targetSummon = TryGet<StatusEffectData>("Summon Icy Flipflop") as StatusEffectSummon;
+                })
+        );
+
+
+        statusEffects.Add(StatusCopy("Summon Junk", "Summon Shiny Flipflop")
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    (data as StatusEffectSummon).summonCard = TryGet<CardData>("Shiny Flipflop");
+})
+);
+        statusEffects.Add(
+            StatusCopy("Instant Summon Junk In Hand", "Instant Shiny Flipflop")
+                .SubscribeToAfterAllBuildEvent(data =>
+                {
+                    (data as StatusEffectInstantSummon).targetSummon = TryGet<StatusEffectData>("Summon Shiny Flipflop") as StatusEffectSummon;
+                })
+        );
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenCardDrawn>("FLIPFLOPTIME")
+.WithText("Turn all your items into flipflops")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenCardDrawn;
+
+realData.effectToApply = TryGet<StatusEffectData>("flipflopswap");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Hand;
+realData.eventPriority = 5;
+realData.targetMustBeAlive = false;
+realData.applyConstraints = new TargetConstraint[]
+{
+
+
+          new TargetConstraintIsItem(),
+
+          new TargetConstraintIsSpecificCard()
+          {
+              not = true,  allowedCards = new CardData[] { TryGet<CardData>("Flipflop") }
+
+
+          },
+          new TargetConstraintHasAttackEffect()
+          {
+               not = true, effect  = TryGet<StatusEffectData>("Snow")
+          }
+          ,   new TargetConstraintHasAttackEffect()
+          {
+               not = true, effect  = TryGet<StatusEffectData>("Reduce Counter")
+          }
+
+
+};
+
+})
+);
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenCardDrawn>("IceFLIPFLOPTIME")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectApplyXWhenCardDrawn;
+
+    realData.effectToApply = TryGet<StatusEffectData>("iceflipflopswap");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Hand;
+    realData.eventPriority = 5;
+    realData.targetMustBeAlive = false;
+    realData.applyConstraints = new TargetConstraint[]
+    {
+
+
+          new TargetConstraintIsItem(),
+
+          new TargetConstraintIsSpecificCard()
+          {
+              not = true,  allowedCards = new CardData[] { TryGet<CardData>("Icy Flipflop") }
+
+
+          },
+          new TargetConstraintHasAttackEffect()
+          {
+               effect  =  TryGet<StatusEffectData>("Snow")
+          }
+
+
+
+    };
+
+})
+);
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenCardDrawn>("SHINEFLIPFLOPTIME")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenCardDrawn;
+
+realData.effectToApply = TryGet<StatusEffectData>("SHINEflipflopswap");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Hand;
+realData.eventPriority = 5;
+realData.targetMustBeAlive = false;
+realData.applyConstraints = new TargetConstraint[]
+{
+
+
+          new TargetConstraintIsItem(),
+
+          new TargetConstraintIsSpecificCard()
+          {
+              not = true,  allowedCards = new CardData[] { TryGet<CardData>("Shiny Flipflop") }
+
+
+          },
+          new TargetConstraintHasAttackEffect()
+          {
+               effect  =  TryGet<StatusEffectData>("Reduce Counter")
+          }
+
+
+
+};
+
+})
+);
+        
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantMultiple>("SHINEflipflopswap")
+.WithCanBeBoosted(false)
+.WithTextInsert("=")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectInstantMultiple;
+
+    realData.effects = new StatusEffectInstant[]
+    {
+     TryGet<StatusEffectInstant>("Sacrifice Ally"),
+     TryGet<StatusEffectInstant>("Instant Shiny Flipflop")
+    };
+}
+
+));
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantMultiple>("iceflipflopswap")
+.WithCanBeBoosted(false)
+.WithTextInsert("=")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantMultiple;
+
+realData.effects = new StatusEffectInstant[]
+{
+     TryGet<StatusEffectInstant>("Sacrifice Ally"),
+     TryGet<StatusEffectInstant>("Instant Icy Flipflop")
+};
+}
+
+));
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantMultiple>("flipflopswap")
+.WithCanBeBoosted(false)
+.WithTextInsert("=")
+ .SubscribeToAfterAllBuildEvent(data =>
+ {
+     var realData = data as StatusEffectInstantMultiple;
+
+     realData.effects = new StatusEffectInstant[]
+ {
+     TryGet<StatusEffectInstant>("Sacrifice Ally"),
+     TryGet<StatusEffectInstant>("Instant Flipflop")
+ };
+ }
+
+     ));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenItemPlayed>("Expresso on card played")
+.WithText("When item is played, gain <{a}> <keyword=ex>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectApplyXWhenItemPlayed;
+
+    realData.effectToApply = TryGet<StatusEffectData>("Expresso");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    realData.eventPriority = 5;
+    realData.targetMustBeAlive = false;
+   
+
+})
+);
+
+
+
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
@@ -12429,7 +13070,69 @@ new StatusEffectDataBuilder(this)
 
         //ASHI SHI POTION EFFECTS-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantAddRandomCharmToInventory>("Terrorcharm time")
 
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectInstantAddRandomCharmToInventory;
+
+ realData.eventPriority = 1;
+ realData.customList = [TryGet<CardUpgradeData>("TerrorCharm")];
+
+}));
+
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenWin>("Add TerrorCharm")
+.WithText("Add <card=goobers.Terrorcharm> to your inventory at the end of the battle.")
+.WithCanBeBoosted(false)
+.WithTextInsert("")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectApplyXWhenWin;
+
+    realData.effectToApply = TryGet<StatusEffectData>("Terrorcharm time");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    realData.eventPriority = 1;
+
+}
+  ));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantAddRandomCharmToInventory>("Ashicharm time")
+
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantAddRandomCharmToInventory;
+
+realData.eventPriority = 1;
+realData.customList = [TryGet<CardUpgradeData>("AshiCharm")];
+
+}));
+
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenWin>("Add AshiCharm")
+.WithText("Add <card=goobers.Ashicharm> to your inventory at the end of the battle.")
+.WithCanBeBoosted(false)
+.WithTextInsert("")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectApplyXWhenWin;
+
+    realData.effectToApply = TryGet<StatusEffectData>("Ashicharm time");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    realData.eventPriority = 1;
+
+}
+  ));
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
@@ -15798,7 +16501,7 @@ new CardDataBuilder(this).CreateUnit("Koogooloo", "Koogooloo")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Bo Bo", "Bo Bo")
 .SetSprites("BOBO.png", "BOBO BG.png")
-.SetStats(8, 2, 3)
+.SetStats(7, 2, 3)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(200)
@@ -15807,7 +16510,7 @@ new CardDataBuilder(this).CreateUnit("Bo Bo", "Bo Bo")
 {
     data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
       {
-          SStack("When Hit Gain Attack To Self (No Ping)",3)
+          SStack("When Hit Gain Attack To Self (No Ping)",2)
 
   };
 })
@@ -15816,7 +16519,7 @@ new CardDataBuilder(this).CreateUnit("Bo Bo", "Bo Bo")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Do Bo", "Do Bo")
 .SetSprites("ROBO.png", "ROBO BG.png")
-.SetStats(10, 4, 5)
+.SetStats(9, 4, 5)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(200)
@@ -15853,7 +16556,7 @@ new CardDataBuilder(this).CreateUnit("Ro Ro", "Ro Ro")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Mo Mo Senior", "Mo Mo Senior")
 .SetSprites("MOMOSEN.png", "MOMOSEN BG.png")
-.SetStats(22, 2, 4)
+.SetStats(16, 2, 4)
 .WithCardType("Miniboss")
 .WithFlavour("")
 .WithValue(400)
@@ -15941,7 +16644,7 @@ new CardDataBuilder(this).CreateUnit("Baby Horns", "Baby Horns")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Judge", "Judge")
 .SetSprites("Judge.png", "Judge BG.png")
-.SetStats(10, 3, 4)
+.SetStats(8, 3, 4)
 .WithCardType("Enemy")
 .WithValue(350)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -15981,7 +16684,7 @@ new CardDataBuilder(this).CreateUnit("Mourn", "Mourner")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Torture", "Toury")
 .SetSprites("TORCH.png", "TORCH BG.png")
-.SetStats(12, 1, 4)
+.SetStats(9, 1, 4)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(300)
@@ -16000,7 +16703,7 @@ new CardDataBuilder(this).CreateUnit("Torture", "Toury")
         cards.Add(
      new CardDataBuilder(this).CreateUnit("Dumples", "Dumples")
      .SetSprites("Dumples.png", "Dumples BG.png")
-     .SetStats(8, 2, 3)
+     .SetStats(10, 2, 3)
      .WithCardType("Enemy")
      .WithFlavour("")
      .WithValue(300)
@@ -16020,7 +16723,7 @@ new CardDataBuilder(this).CreateUnit("Torture", "Toury")
         cards.Add(
   new CardDataBuilder(this).CreateUnit("Halo", "Halos")
   .SetSprites("HALOS.png", "HALOS BG.png")
-  .SetStats(11, 1, 3)
+  .SetStats(9, 1, 3)
   .WithCardType("Enemy")
   .WithFlavour("")
   .WithValue(300)
@@ -16042,7 +16745,7 @@ new CardDataBuilder(this).CreateUnit("Torture", "Toury")
         cards.Add(
  new CardDataBuilder(this).CreateUnit("Inny", "Inny Inny")
  .SetSprites("INNY.png", "INNY BG.png")
- .SetStats(12, 3, 4)
+ .SetStats(10, 3, 4)
  .WithCardType("Enemy")
  .WithFlavour("")
  .WithValue(300)
@@ -16063,7 +16766,7 @@ new CardDataBuilder(this).CreateUnit("Torture", "Toury")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Susu", "Nurser")
 .SetSprites("NURSER.png", "NURSER BG.png")
-.SetStats(10, 3, 5)
+.SetStats(7, 3, 5)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(300)
@@ -16077,7 +16780,7 @@ new CardDataBuilder(this).CreateUnit("Susu", "Nurser")
 
 
 };
-
+    
 
 })
 ); 
@@ -16498,17 +17201,18 @@ CreateTraitStack("Frontline", 1)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Fear Sprout", "Drain Flower")
 .SetSprites("Plant.png", "Spider BG.png")
-.SetStats(3, null, 0)
+.SetStats(1000, null, 0)
 .WithCardType("Enemy")
 .WithValue(400)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 
 {
-data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+    data.charmSlots = -10;
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
      {
 
-         SStack("Block",15),SStack("Fear While active",1),SStack("Fear While active2",1),SStack("Fear transferer",1),
-         SStack("FullImmuneToInk",1)
+         SStack("Block",2000),SStack("Fear While active",1),SStack("Fear While active2",1),SStack("Fear transferer",1),
+         SStack("FullImmuneToInk",1),SStack("ELU",1000)
 };
 data.traits = new List<CardData.TraitStacks>
 
@@ -16878,7 +17582,7 @@ new CardDataBuilder(this).CreateUnit("Nest", "GoopNest")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Bomba Mother", "Bomba Mother")
 .SetSprites("MOMBOM.png", "MOMBOM BG.png")
-.SetStats(30, 20, 9)
+.SetStats(40, 20, 10)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(300)
@@ -16893,12 +17597,12 @@ data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serp
 };
 data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
         {
-    SStack("Summon Bomba when hit",1)
+   SStack("FullImmuneToInk",1),SStack("Effect reduce on hit",4)
 };
 data.traits = new List<CardData.TraitStacks>
 
 {
-         
+           CreateTraitStack("HeavyExplosion", 50)
 };
 
 })
@@ -17092,7 +17796,7 @@ SStack("Frost",3)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Berryglury", "Robberry")
 .SetSprites("BERRYGLURY.png", "BLINGBG.png")
-.SetStats(7, 1, 1)
+.SetStats(7, 2, 2)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(30)
@@ -17107,7 +17811,7 @@ data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serp
 };
 data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
  {
-     SStack("Bling Steal",15),SStack("When Hit Apply Gold To Attacker (No Ping)",5)
+     SStack("Bling Steal",25),SStack("When Hit Apply Gold To Attacker (No Ping)",10)
 
 };
 data.traits = new List<CardData.TraitStacks>
@@ -17122,7 +17826,7 @@ data.traits = new List<CardData.TraitStacks>
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Blingclops", "Beringclops")
 .SetSprites("BLINGCLOPS.png", "BLINGBG.png")
-.SetStats(14, 6, 4)
+.SetStats(14, 5, 4)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(30)
@@ -17154,7 +17858,7 @@ new CardDataBuilder(this).CreateUnit("Blingclops", "Beringclops")
 new CardDataBuilder(this).CreateUnit("Chest", "Chest")
 .SetSprites("REALCHEST.png", "BLINGBG2.png")
 .SetStats(null, null, 0)
-.WithCardType("Clunker")
+.WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(30)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -17168,7 +17872,7 @@ new CardDataBuilder(this).CreateUnit("Chest", "Chest")
    };
     data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
         {
-            SStack("Destroy to Blings",100),
+            SStack("Destroy to Blings",60),
             SStack("Scrap",1)
    };
     data.traits = new List<CardData.TraitStacks>
@@ -17184,7 +17888,7 @@ new CardDataBuilder(this).CreateUnit("Chest", "Chest")
 new CardDataBuilder(this).CreateUnit("FAKEChest", "Chest")
 .SetSprites("FAKECHEST.png", "BLINGBG2.png")
 .SetStats(null, null, 0)
-.WithCardType("Clunker")
+.WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(30)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -17198,7 +17902,7 @@ data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serp
 };
 data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
 {
-   SStack("Destroy to Blings",100),
+   SStack("Destroy to Blings",70),
             SStack("Scrap",1),SStack("Mimicgo",1)
 };
 data.traits = new List<CardData.TraitStacks>
@@ -17215,9 +17919,9 @@ data.traits = new List<CardData.TraitStacks>
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Mimic", "Mimic")
 .SetSprites("MIMIC.png", "BLINGBG.png")
-.SetStats(11, 3, 3)
+.SetStats(12, 4, 3)
 .WithCardType("Enemy")
-.WithValue(30)
+.WithValue(200)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 
 {
@@ -17230,7 +17934,7 @@ data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serp
 data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
    {
 
-      SStack("Bling Steal",50), SStack("Scrap",1),SStack("ImmuneToSnow",1)
+      SStack("Bling Steal",80), SStack("Scrap",1),SStack("ImmuneToSnow",1)
 };
 data.traits = new List<CardData.TraitStacks>
 
@@ -17245,9 +17949,9 @@ data.traits = new List<CardData.TraitStacks>
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Bling bird", "Bling Birb")
 .SetSprites("BLINGBIRB.png", "BLINGBG2.png")
-.SetStats(25, 3, 3)
+.SetStats(20, 3, 3)
 .WithCardType("Miniboss")
-.WithValue(30)
+.WithValue(900)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 
 {
@@ -17259,7 +17963,7 @@ new CardDataBuilder(this).CreateUnit("Bling bird", "Bling Birb")
 };
   data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
        {
-           SStack("Bling Steal",100),SStack("Frenzy Snowball",1)
+          SStack("Scrap",1), SStack("Bling Steal",100),SStack("Frenzy Snowball",1)
 };
   data.traits = new List<CardData.TraitStacks>
 
@@ -17271,11 +17975,15 @@ new CardDataBuilder(this).CreateUnit("Bling bird", "Bling Birb")
 );
 
         //Bombers 4
+        //Bombers 4
+        //Bombers 4
+        //Bombers 4
+        //Bombers 4
 
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Rabom", "Rabom")
-.SetSprites(".png", " BG.png")
-.SetStats(11, 2, 4)
+.SetSprites("RABOM.png", "RABOM BG.png")
+.SetStats(11, 2, 3)
 .WithCardType("Enemy")
 .WithValue(200)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -17284,7 +17992,7 @@ new CardDataBuilder(this).CreateUnit("Rabom", "Rabom")
 
  data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
                                        {
- SStack("Weakness",3)
+ SStack("Weakness",1)
 
 };
  data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
@@ -17303,8 +18011,8 @@ new CardDataBuilder(this).CreateUnit("Rabom", "Rabom")
 
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Raquiby", "Raquiby")
-.SetSprites(".png", " BG.png")
-.SetStats(15, 1, 1)
+.SetSprites("SQUIBY.png", "SQUIBY BG.png")
+.SetStats(16, 1, 2)
 .WithCardType("Enemy")
 .WithValue(200)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -17318,8 +18026,349 @@ data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serp
 };
 data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
           {
-              SStack("All Weakness",1)
+              SStack("All Weakness",1),SStack("ImmuneToSnow",1)
 
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+    
+};
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Bomtech", "5G Bom Producer")
+.SetSprites("5G.png", "5G BG.png")
+.SetStats(null, null, 0)
+.WithCardType("Clunker")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                              {
+
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+              {
+              SStack("Scrap",3),SStack("Bom before attack",1)
+
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+ 
+};
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Buffybom", "Bomfy")
+.SetSprites("BUFFBOM.png", "BUFFBOM BG.png")
+.SetStats(14, 5, 4)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+   data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                              {
+
+
+};
+   data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+              {
+            SStack("Heal when bom",2)
+
+};
+   data.traits = new List<CardData.TraitStacks>
+
+   {
+       CreateTraitStack("Smackback", 1)
+   };
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Bombomb", "Bombomb")
+.SetSprites("BOMBOMB.png", "BOMBOMB BG.png")
+.SetStats(30, 0, 4)
+.WithCardType("Enemy")
+.WithValue(300)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                               {
+
+SStack("Weakness",2)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+               {
+                   SStack("Weakness",8),SStack("MultiHit",1),SStack("When Hit Trigger To Self",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+     CreateTraitStack("BlindShot", 1)
+};
+
+})
+);
+        
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Cepibombom", "Cepibombom")
+.SetSprites("CENTU.png", "CENTU BG.png")
+.SetStats(60, 5, 5)
+.WithCardType("Miniboss")
+.WithValue(600)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                   {
+
+SStack("Weakness",3)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                   {
+                       SStack("ImmuneToSnow",1),SStack("Bom Frenzy",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+      
+};
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Safetynet", "Contained Compressed Berries")
+.SetSprites("CLEANSER.png", "CLEANSER BG.png")
+.SetStats(null, null, 0)
+.WithCardType("Clunker")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+ data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                       {
+
+};
+ data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                       {
+                       SStack("Scrap",2),SStack("Cleanser row",1)
+};
+ data.traits = new List<CardData.TraitStacks>
+
+ {
+     CreateTraitStack("Backline", 1)
+ };
+
+})
+);
+        //DECK CURSERS 4
+        //DECK CURSERS 4
+        //DECK CURSERS 4
+        //DECK CURSERS 4
+        //DECK CURSERS 4
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Deck Destroyer", "Inferno")
+.SetSprites("DESTROYER.png", "DESTROYER BG.png")
+.SetStats(1000, null, 0)
+.WithCardType("Enemy")
+.WithValue(600)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+  data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                          {
+
+};
+  data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                          {
+                       SStack("Remove when Hit",5), SStack("Delete card when sp",1), SStack("FullImmuneToInk",1),SStack("reset",20)
+};
+  data.traits = new List<CardData.TraitStacks>
+
+  {
+      CreateTraitStack("Backline", 1)
+  };
+
+})
+);
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Remnent", "Remnents")
+.SetSprites("REMNENT.png", "REMNENT BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.CanPlayOnBoard(true)
+.CanPlayOnFriendly(false)
+.CanPlayOnHand(false)
+.CanPlayOnEnemy(false)
+.WithValue(53)
+.WithText($"<keyword={Extensions.PrefixGUID("unplayable", this)}>")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+    {
+        SStack("Damage when drawn",2)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+      CreateTraitStack("Cursed", 1)
+};
+})
+
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Brick", "Brick")
+.SetSprites("BRICK.png", "BRICK BG.png")
+.SetStats(9, 5, 3)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+ data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                            {
+
+};
+ data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                            {
+             SStack("Gain Sweet Point Self",5),SStack("Top deck? where",1),SStack("Add Blocker to deck",1),SStack("reset",10)
+};
+ data.traits = new List<CardData.TraitStacks>
+
+{
+      
+};
+
+})
+);
+
+        cards.Add(
+  new CardDataBuilder(this).CreateItem("Blocker", "Restricter")
+.SetSprites("BLOCKER.png", "BLOCKER BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.CanPlayOnBoard(true)
+.CanPlayOnFriendly(false)
+.CanPlayOnHand(false)
+.CanPlayOnEnemy(false)
+.WithValue(53)
+.WithText($"<keyword={Extensions.PrefixGUID("unplayable", this)}>")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+{
+        
+};
+    data.traits = new List<CardData.TraitStacks>
+
+  {
+      CreateTraitStack("Cursed", 1)
+  };
+})
+
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Skello", "Skello")
+.SetSprites("SKELLO.png", "SKELLO BG.png")
+.SetStats(16, 6, 4)
+.WithCardType("Enemy")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                            {
+SStack("Shroom",3)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                            {
+                    SStack("Gain Sweet Point Self",5), SStack("Acid skull to discard",1),SStack("Acid skull to deck",1),SStack("reset",15)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+     
+};
+
+})
+);
+
+        cards.Add(
+ new CardDataBuilder(this).CreateItem("Acid Skull", "Acid Skull")
+.SetSprites("ACIDSKULL.png", "ACIDSKULL BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.CanPlayOnBoard(true)
+.CanPlayOnFriendly(false)
+.CanPlayOnHand(false)
+.CanPlayOnEnemy(false)
+.WithValue(53)
+.WithText($"<keyword={Extensions.PrefixGUID("unplayable", this)}>")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+   data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+    {
+        SStack("Shroom when drawn",2)
+};
+   data.traits = new List<CardData.TraitStacks>
+
+ {
+      CreateTraitStack("Cursed", 1)
+ };
+})
+
+);
+
+
+ 
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Skrogy", "Skrogy")
+.SetSprites("SKROGY.png", "SKROGY BG.png")
+.SetStats(28, 4, 4)
+.WithCardType("Miniboss")
+.WithValue(600)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                       {
+
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                       {
+            SStack("Drawn cards gain attack",1),SStack("ImmuneToSnow",1)
 };
 data.traits = new List<CardData.TraitStacks>
 
@@ -17329,7 +18378,6 @@ data.traits = new List<CardData.TraitStacks>
 
 })
 );
-
 
 
         //CHARMS--------------------------------------------------------------------------------------------------------
@@ -17394,7 +18442,7 @@ new CardUpgradeDataBuilder(this)
 (cardUpgrade) =>
 {
    cardUpgrade.effects = new CardData.StatusEffectStacks[] { SStack("Choco", 1)};
-    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack(), new TargetConstraintAttackMoreThan() { value = 0 } };
+    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack(), new TargetConstraintAttackMoreThan() { value = -1 } };
 })
 );
 
@@ -17412,7 +18460,7 @@ new CardUpgradeDataBuilder(this)
 (cardUpgrade) =>
 {
 cardUpgrade.effects = new CardData.StatusEffectStacks[] { SStack("Cake", 2) };
-    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack(), new TargetConstraintAttackMoreThan() { value = 2 } };
+    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack(), new TargetConstraintAttackMoreThan() { value = 1 } };
 })
 );
 
@@ -17464,7 +18512,7 @@ new CardUpgradeDataBuilder(this)
 (cardUpgrade) =>
 {
     cardUpgrade.effects = new CardData.StatusEffectStacks[] { SStack("Expresso", 2)};
-    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack() , new TargetConstraintAttackMoreThan() { value = 1 } };
+    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack() , new TargetConstraintAttackMoreThan() { value = 0 } };
 })
 );
 
@@ -17496,11 +18544,15 @@ new CardUpgradeDataBuilder(this)
      .WithType(CardUpgradeData.Type.Charm)                 //Not needed since we used CreateCharm (why did I put this here :/). If we do not want the charm in the general pool, you would have to use this method to make the upgrade a charm.
      .WithImage("Ashishicharm.png")                        //Sets the image file path to "GlacialCharm.png". See below.
      .WithTitle("Mini Ashi Shi Charm- Bling Bling Friendo!")                           //Sets in-game name as Glacial Charm
-     .WithText("When hit, gain x8 <keyword=blings> equal damage taken.") //Get allows me to skip the GUID. The Text class does not.                                                                   //If you are having trouble, find your keyword via the Unity Explorer and verify its name. 
+     .WithText("When hit, gain x9 <keyword=blings> equal damage taken." +
+     " Gain <keyword=greed> " +
+     "This charm does not take a charm slot.") //Get allows me to skip the GUID. The Text class does not.                                                                   //If you are having trouble, find your keyword via the Unity Explorer and verify its name. 
 
      .SubscribeToAfterAllBuildEvent(
      (cardUpgrade) =>
      {
+         cardUpgrade.takeSlot = false;
+         cardUpgrade.giveTraits = new CardData.TraitStacks[] { CreateTraitStack("Greed", 1) };
          cardUpgrade.effects = new CardData.StatusEffectStacks[] { SStack("Borrowed Ashi", 1) };
          cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintCanBeHit() };
      })
@@ -17512,7 +18564,8 @@ new CardUpgradeDataBuilder(this)
 .WithType(CardUpgradeData.Type.Charm)                 //Not needed since we used CreateCharm (why did I put this here :/). If we do not want the charm in the general pool, you would have to use this method to make the upgrade a charm.
 .WithImage("Terrorcharm.png")                        //Sets the image file path to "GlacialCharm.png". See below.
 .WithTitle("Mini Terrormisu Charm - >:C")                           //Sets in-game name as Glacial Charm
-.WithText("Trigger ally ahead, Deal <2> damage to self. This charm does not take a charm slot.") //Get allows me to skip the GUID. The Text class does not.                                                                   //If you are having trouble, find your keyword via the Unity Explorer and verify its name. 
+.WithText("Trigger ally ahead, Deal <1> damage to self." +
+" This charm does not take a charm slot.") //Get allows me to skip the GUID. The Text class does not.                                                                   //If you are having trouble, find your keyword via the Unity Explorer and verify its name. 
 
 .SubscribeToAfterAllBuildEvent(
 (cardUpgrade) =>
@@ -17536,7 +18589,7 @@ new CardUpgradeDataBuilder(this)
 {
     cardUpgrade.takeSlot = false;
 
-    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack(), new TargetConstraintAttackMoreThan() { value = 0 } };
+    cardUpgrade.targetConstraints = new TargetConstraint[] { new TargetConstraintDoesAttack(), new TargetConstraintAttackMoreThan() { value = -1 } };
 })
 );
 
@@ -17865,9 +18918,32 @@ trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Hangry") };
  trait.keyword = Get<KeywordData>("unbothered");
  trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Owntempo") };
 }));
-        
+
+        traitEffects.Add(new TraitDataBuilder(this)
+.Create("Cursed")
+.SubscribeToAfterAllBuildEvent(
+(trait) =>
+{
+ trait.keyword = Get<KeywordData>("curse");
+}));
+
 
         keywords = new List<KeywordDataBuilder>();
+
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("curse")                               //The internal name for the upgrade.
+.WithTitle("Cursed")                            //The in-game name for the upgrade.
+.WithTitleColour(new Color(0.7f, 7f, 0.1f)) //Light purple on the title of the keyword pop-up
+.WithShowName(true)                              //Shows name in Keyword box (as opposed to a nonexistant icon).
+.WithDescription("A cursed card") //Format is body|note.
+.WithNoteColour(new Color(0.5f, 0.4f, 0f))  //Somewhat teal
+.WithBodyColour(new Color(0.5f, 0.4f, 0f))       //Cyan-ish
+.WithCanStack(false)                             //The keyword does not show its stack number.
+);
+
+
 
         keywords.Add(
 new KeywordDataBuilder(this)
@@ -19453,7 +20529,7 @@ new CardDataBuilder(this).CreateUnit("Blunkytime", "Blunky's Totem")
         
 
 cards.Add(
-new CardDataBuilder(this).CreateUnit("Blunkycharm", "Blunkycharm")
+new CardDataBuilder(this).CreateUnit("Blunkycharm", "Blunky's Upgraded Ice Cube Maker")
 .SetSprites("BLUNKFRIDGE.png", "BLUNKFRIDGE BG.png")
 .SetStats(null, null, 0)
 .WithText("<keyword=goobers.charm>")
@@ -19466,7 +20542,7 @@ new CardDataBuilder(this).CreateUnit("Blunkycharm", "Blunkycharm")
     data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
    {
 
-    SStack("Scrap",1),
+    
     SStack("When Deployed Apply Block To Self",2)
 
 
@@ -19475,6 +20551,202 @@ new CardDataBuilder(this).CreateUnit("Blunkycharm", "Blunkycharm")
 })
 
 );
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Ashishi Totem", "Borrowed Silly Spell")
+.SetSprites("SILLYSPELL.png", "SILLYSPELL BG.png")
+.SetStats(null, null, 0)
+.WithCardType("Enemy")
+.SetTraits(TStack("Backline", 1))
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+
+
+
+  data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+     {
+          SStack("Add AshiCharm",1), SStack("FLIPFLOPTIME",1),SStack("IceFLIPFLOPTIME",1),SStack("SHINEFLIPFLOPTIME",1),
+       SStack("Scrap",1000),
+      SStack("FullImmuneToSnow",1),
+   SStack("FullImmuneToInk",1),
+     SStack("ELU",1000),
+
+ };
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Ashicharm", "Mini Ashi Shi Charm- Bling Bling Friendo!")
+.SetSprites("ASHICHARM.png", "BLUNKFRIDGE BG.png")
+.SetStats(null, null, 0)
+.WithText("<keyword=goobers.charm>")
+.WithCardType("Summoned")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+    data.mainSprite.name = "Nothing";
+    data.charmSlots = -10;
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+   {
+
+      SStack("Borrowed Ashi",1)
+
+
+
+   };
+
+    data.traits = new List<CardData.TraitStacks>
+
+    {
+         CreateTraitStack("Greed", 1)
+    };
+})
+
+);
+
+
+       
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Flipflop", "Flipflop")
+.SetSprites("FLIPFLOP.png", "FLIPFLOP BG.png")
+.SetStats(null, 1)
+.WithCardType("Item")
+.WithText("Menacing piece of footwear")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+    data.mainSprite.name = "Nothing";
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+{
+   
+    SStack("Expresso on card played",1)
+
+
+
+};
+})
+
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Icy Flipflop", "Icy Flipflop")
+.SetSprites("ICEFLOP.png", "ICY FLIP BG.png")
+.SetStats(null, 0)
+.WithCardType("Item")
+.WithText("Menacing piece of footwear it's quite cold")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+    data.mainSprite.name = "Nothing";
+    data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+   {
+            SStack("Snow",1)
+
+};
+
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+  {
+
+    SStack("Expresso on card played",1)
+
+
+
+};
+})
+
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Shiny Flipflop", "Shiny Flipflop")
+.SetSprites("Shinyflop.png", "SHINEFLIP BG.png")
+.SetStats(null, 0)
+.WithCardType("Item")
+.WithText("Shiny menacing piece of footwear")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+    data.mainSprite.name = "Nothing";
+    data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+   {
+            SStack("Reduce Counter",1)
+
+};
+
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+  {
+
+    SStack("Expresso on card played",1)
+
+
+
+};
+})
+
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Terrorcharm", "Mini Terrormisu Charm - >:C")
+.SetSprites("TERRORCHARMI.png", "BLUNKFRIDGE BG.png")
+.SetStats(null, null, 0)
+.WithText("<keyword=goobers.charm>")
+.WithCardType("Summoned")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+data.mainSprite.name = "Nothing";
+data.charmSlots = -10;
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+{
+
+
+    SStack("Trigger Front2", 1), SStack("On Card Played Damage To Self", 1)
+
+
+
+};
+})
+
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Mini Terrormisu", "Terrormisu Plushie")
+.SetSprites("CHIBI TERRORMISU.png", "CHIBI TERRORMISU BG.png")
+.SetStats(null, null, 2)
+.WithCardType("Enemy")
+.SetTraits(TStack("Backline", 1))
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+
+
+
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+       {
+          SStack("Add TerrorCharm",1), SStack("Trigger highest attack",1),
+       SStack("Scrap",1000),
+      SStack("FullImmuneToSnow",1),
+   SStack("FullImmuneToInk",1),
+     SStack("ELU",1000),
+
+   };
+
+
+})
+);
+
+
+
 
 
         preLoaded = true;
@@ -20524,7 +21796,7 @@ new CardDataBuilder(this).CreateUnit("Espressa", "Latteasha")
 {
     data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
                                                   {
-     SStack("Expresso Service",1),SStack("While Active Zoomspresso",1),SStack("MultiHit",1)
+     SStack("Expresso Service",1),SStack("While Active Zoomspresso",1)
 
     };
 
@@ -20703,7 +21975,7 @@ new CardDataBuilder(this).CreateUnit("Blabery", "Blabery Shorcake")
             data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
             {
                 SStack("Gain spice bleed",5),
-                SStack("Blood attacker",3),
+                SStack("Blood attacker",2),
                 SStack("reset",15),
                 SStack("Darkia comboa Act",1),
                 SStack("Darkia combob Act",1),
@@ -20777,7 +22049,7 @@ new CardDataBuilder(this).CreateUnit("Blabery", "Blabery Shorcake")
       };
           data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
           {
-              SStack("Gain spice bleed",6),
+              SStack("Gain spice bleed",4),
                 SStack("Blood Expresso",1),
                 SStack("MultiHit",3),
                 SStack("reset",18)
@@ -20801,7 +22073,7 @@ new CardDataBuilder(this).CreateUnit("Blabery", "Blabery Shorcake")
         cards.Add(
   new CardDataBuilder(this).CreateUnit("Darkiaodd", "Sawcha")
   .SetSprites("DARKIAODD.png", "DARKIAODD BG.png")
-  .SetStats(4, 4, 4)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
+  .SetStats(6, 3, 4)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
   .WithCardType("Leader")
   .WithFlavour("Hmm... Unsatisfactory...")
   .SubscribeToAfterAllBuildEvent(delegate (CardData data)        //New lines (replaces flavor text)
@@ -20816,7 +22088,7 @@ new CardDataBuilder(this).CreateUnit("Blabery", "Blabery Shorcake")
       data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
       {
                 SStack("Gain spice bleed",9),
-          SStack("Blood Spice",3),
+          SStack("Blood Spice",2),
                 SStack("Scrap",3),
                 SStack("reset",18)
       };
@@ -20838,7 +22110,7 @@ new CardDataBuilder(this).CreateUnit("Blabery", "Blabery Shorcake")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Darkiablood", "Darkia LV2")
 .SetSprites("DARKIABLO.png", "DARKIABLO BG.png")
-.SetStats(10, 4, 3)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
+.SetStats(10, 4, 4)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
 .WithCardType("Leader")
 .WithFlavour("Hmm... Unsatisfactory...")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)        //New lines (replaces flavor text)
@@ -20855,14 +22127,13 @@ data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade S
     SStack("Darkia LV3 combo Act",1),
                     SStack("Gain spice bleed",8),
                 SStack("Blood attacker all",3),
-                SStack("Blood Triger",1),
                 SStack("reset",20)
 
 };
 
 data.traits = new List<CardData.TraitStacks>
 
-{CreateTraitStack("Maid", 2),CreateTraitStack("GrandMaid", 1)};
+{CreateTraitStack("Maid", 2)};
 
 
 data.createScripts = new CardScript[]  //These scripts run when right before Events.OnCardDataCreated
@@ -20947,7 +22218,7 @@ new CardDataBuilder(this).CreateUnit("Darkiachalice", "Darkia LV3")
         cards.Add(
         new CardDataBuilder(this).CreateUnit("Tiramisu", "Tiramisu(Leader)")
         .SetSprites("Tiramisulead.png", "Tiramisulead BG.png")
-        .SetStats(6, 4, 3)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
+        .SetStats(8, 4, 3)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
         .WithCardType("Leader")
         .WithFlavour("Coffee, I hope you're out there somewhere...")
         .WithText("<keyword=goobers.finding>")
@@ -20974,7 +22245,7 @@ new CardDataBuilder(this).CreateUnit("Darkiachalice", "Darkia LV3")
         cards.Add(
        new CardDataBuilder(this).CreateUnit("TiramisuA", "Tiramisu The Commander")
        .SetSprites("ATIRAMISU.png", "ATIRAMISU BG.png")
-       .SetStats(8, 4, 3)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
+       .SetStats(10, 4, 3)                                                  //Shade Snake has 4 health, 3 attack, and no timer.
        .WithCardType("Leader")
        .WithFlavour("Rest coffee let me handle this.")
        .SubscribeToAfterAllBuildEvent(delegate (CardData data)        //New lines (replaces flavor text)
@@ -21678,7 +22949,7 @@ new CardDataBuilder(this).CreateItem("VIPSonly", "VIPS only!")
     data.startWithEffects = new CardData.StatusEffectStacks[]
                 {
 
-SStack("Attack to all SP",5)
+SStack("Attack to all SP",2)
     };
     data.attackEffects = new CardData.StatusEffectStacks[]
          {
@@ -21895,7 +23166,7 @@ new CardDataBuilder(this).CreateItem("Time out", "Time out guys :3")
 {
  data.startWithEffects = new CardData.StatusEffectStacks[]
              {
-    SStack("Snow all",1), SStack("Halt Snow all",1),SStack("Decay",5)
+    SStack("Snow all",1), SStack("Halt Snow all",1),SStack("Decay",4)
 
  };
  data.attackEffects = new CardData.StatusEffectStacks[]
@@ -22006,7 +23277,7 @@ new CardDataBuilder(this).CreateItem("Wake up", "Wake up! NOW!")
 {
 data.startWithEffects = new CardData.StatusEffectStacks[]
                        {
-SStack("On Card Played Reduce Counter To Allies",2),SStack("Snow all enemiesw",1)
+SStack("On Card Played Reduce Counter To Allies",1),SStack("Snow all enemiesw",1)
 
 };
 data.attackEffects = new CardData.StatusEffectStacks[]
@@ -22992,6 +24263,24 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
   .GiveMiniBossesCharms(new string[] { "Greg" }, "CardUpgradeBoost", "CardUpgradeSun")
 
   ));
+            EnemyBattles.list.Add(
+          (
+               tier: 3,
+               new BattleDataEditor(this, "Deck Destroyers", goldGivers: 0)
+.SetSprite("CARDREAPER.png")
+.SetNameRef("Deck Reapers")
+.EnemyDictionary(('C', "Deck Destroyer"), ('W', "Brick"), ('P', "Skello"), ('K', "Baby Horns"), ('B', "Skrogy"))
+.StartWavePoolData(0, "Wave 1: Spooky")
+.ConstructWaves(5, 0, "CCWK", "CCKKW")
+.StartWavePoolData(1, "Wave 2: Spooky2")
+.ConstructWaves(4, 8, "WPK", "KPP")
+.StartWavePoolData(2, "Wave 3: AAAAAAAAAA")
+.ConstructWaves(3, 9, "BKW", "BPK", "BKK")
+.ToggleBattle(true)
+.AddBattleToLoader().LoadBattle(3, exclusivity: BattleEditor.BattleStack.Exclusivity.removeUnmodded)
+.GiveMiniBossesCharms(new string[] { "Skrogy" }, "CardUpgradeTrashBad", "CardUpgradeInk")
+
+     ));
 
             EnemyBattles.list.Add( // test code. delete
                      (
@@ -23005,14 +24294,33 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
      .StartWavePoolData(1, "Wave 2: Spooky2")
      .ConstructWaves(4, 8, "PWCF", "PCFW")
      .StartWavePoolData(2, "Wave 3: AAAAAAAAAA")
-     .ConstructWaves(4, 9, "CB", "BW", "KB", "BC")
+     .ConstructWaves(4, 9, "CBCW", "CBWW", "FFBW", "WBCF")
      .ToggleBattle(true)
      .AddBattleToLoader().LoadBattle(4, exclusivity: BattleEditor.BattleStack.Exclusivity.removeUnmodded)
      .GiveMiniBossesCharms(new string[] { "Fear Deity" }, "CardUpgradeShellOnKill", "CardUpgradeSun")
 
      ));
 
-        
+            EnemyBattles.list.Add( // test code. delete
+             (
+             tier: 4,
+             new BattleDataEditor(this, "Bombsaway", goldGivers: 1)
+.SetSprite("ROGUEBOMS.png")
+.SetNameRef("Rougue Boms!")
+.EnemyDictionary(('C', "Rabom"), ('W', "Raquiby"), ('P', "Bomtech"), ('K', "Buffybom"), ('F', "Bombomb"), ('B', "Cepibombom"), ('D', "Safetynet"))
+.StartWavePoolData(0, "Wave 1: Spooky")
+.ConstructWaves(3, 0, "CCWP", "CWCP", "PCCW")
+.StartWavePoolData(1, "Wave 2: Spooky2")
+.ConstructWaves(4, 8, "KWDCC", "CKDWC")
+.StartWavePoolData(2, "Wave 3: AAAAAAAAAA")
+.ConstructWaves(4, 9, "BFFP", "FFPB", "FBP", "BFFP")
+.ToggleBattle(true)
+.AddBattleToLoader().LoadBattle(4, exclusivity: BattleEditor.BattleStack.Exclusivity.removeUnmodded)
+.GiveMiniBossesCharms(new string[] { "Cepibombom" }, "CardUpgradeSun", "BlunkyCharm")
+
+));
+
+
 
             EnemyBattles.list.Add( // test code. delete
                        (
@@ -23146,188 +24454,6 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
         }
         return false;
     }
-
-
-  
-
-
-    public class StatusEffectInstantFillXBoardSlots : StatusEffectInstant
-    {
-        public bool random = false;
-
-        public bool clearBoardFirst = false;
-
-        public CardData[] withCards;
-
-        public readonly List<CardData> pool = new List<CardData>();
-
-        public override IEnumerator Process()
-        {
-            List<CardContainer> rows = References.Battle.GetRows(target.owner);
-            if (clearBoardFirst)
-            {
-                foreach (CardContainer cardContainer in rows)
-                {
-                    CardSlotLane cardSlotLane2 = cardContainer as CardSlotLane;
-                    if (!(cardSlotLane2 != null))
-                    {
-                        continue;
-                    }
-
-                    foreach (CardSlot slot3 in cardSlotLane2.slots)
-                    {
-                        if (slot3.Empty || !slot3.entities.All((Entity e) => e.name != target.name))
-                        {
-                            continue;
-                        }
-
-                        List<Entity> toKill = new List<Entity>(slot3.entities);
-                        foreach (Entity e2 in toKill)
-                        {
-                            yield return e2.Kill(DeathType.Sacrifice);
-                        }
-                    }
-                }
-            }
-
-            List<CardSlot> list = new List<CardSlot>();
-            List<CardSlot> list2 = new List<CardSlot>();
-            List<CardSlot> list3 = new List<CardSlot>();
-            int amount = GetAmount();
-            int i = 0;
-            if (!random)
-            {
-                CardSlotLane cardSlotLane3 = rows[0] as CardSlotLane;
-                if (cardSlotLane3 != null)
-                {
-                    list2 = cardSlotLane3.slots.ToArray().RemoveFromArray(item => item.Empty).ToList();
-                }
-                CardSlotLane cardSlotLane4 = rows[1] as CardSlotLane;
-                if (cardSlotLane4 != null)
-                {
-                    list3 = cardSlotLane4.slots.ToArray().RemoveFromArray(item => item.Empty).ToList();
-                }
-                for (int i2 = 0; i2 < amount; i2++)
-                {
-                    if (list2.Count() > 0 && list3.Count() > 0)
-                    {
-                        if (Dead.Random.Range(1, 2) == 1)
-                        {
-                            list.Add(list2[0]);
-                            list2.RemoveAt(0);
-                        }
-                        else
-                        {
-                            list.Add(list3[0]);
-                            list3.RemoveAt(0);
-                        }
-                    }
-                    else
-                    {
-                        if (list2.Count() > 0)
-                        {
-                            list.Add(list2[0]);
-                            list2.RemoveAt(0);
-                        }
-                        else
-                        {
-                            if (list3.Count() > 0)
-                            {
-                                list.Add(list3[0]);
-                                list3.RemoveAt(0);
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                while (i < amount && rows.SelectMany((CardContainer row) => (row as CardSlotLane).slots.Where((CardSlot slot) => slot.Empty && !list.Contains(slot))).Any())
-                {
-                    CardContainer[] containers = rows.ToArray();
-                    CardSlotLane cardSlotLane = containers.RandomItem() as CardSlotLane;
-                    if (cardSlotLane != null)
-                    {
-                        CardSlot slot2 = cardSlotLane.slots.RandomItem();
-                        if (slot2.Empty && i < amount && !list.Contains(slot2))
-                        {
-                            list.Add(slot2);
-                            i++;
-                        }
-                    }
-                }
-            }
-
-            foreach (CardSlot slot5 in list)
-            {
-                CardData data = Pull().Clone();
-                Card card = CardManager.Get(data, References.Battle.playerCardController, target.owner, inPlay: true, target.owner.team == References.Player.team);
-                yield return card.UpdateData();
-                CardDiscoverSystem.instance.DiscoverCard(data);
-                target.owner.reserveContainer.Add(card.entity);
-                target.owner.reserveContainer.SetChildPosition(card.entity);
-                ActionQueue.Stack(new ActionMove(card.entity, slot5), fixedPosition: true);
-                ActionQueue.Stack(new ActionRunEnableEvent(card.entity), fixedPosition: true);
-                foreach (var status in target.statusEffects)
-                {
-                    if (status is StatusEffectApplyToSummon && !target.silenced)
-                    {
-                        int statusAmount = status.count;
-                        if (status.canBeBoosted) { statusAmount = (int)((statusAmount + target.effectBonus) * (target.effectFactor)); }
-                        ActionQueue.Stack(new ActionApplyStatus(card.entity, target, (status as StatusEffectApplyToSummon).effectToApply, statusAmount), fixedPosition: true);
-                    }
-                }
-            }
-
-            list = null;
-            yield return base.Process();
-        }
-
-        public CardData Pull()
-        {
-            if (pool.Count <= 0)
-            {
-                pool.AddRange(withCards);
-            }
-
-            return pool.TakeRandom();
-        }
-    }
-
- 
-
-
-
-
-    public class TargetConstraintHealthLessThan : TargetConstraint
-    {
-        [SerializeField]
-        public int value;
-
-        public override bool Check(Entity target)
-        {
-            if (target.hp.current >= value)
-            {
-                return not;
-            }
-
-            return !not;
-        }
-
-        public override bool Check(CardData targetData)
-        {
-            if (targetData.hp >= value)
-            {
-                return not;
-            }
-
-            return !not;
-        }
-    }
     public override void Unload()
     {
 
@@ -23388,7 +24514,8 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
                 return listenerlist.Cast<T>().ToList();
             case nameof(GameModifierData):                       //To avoid confusion with C# classes, the word "tribe" will be used to talk about an instance of ClassData.
                 return modifier.Cast<T>().ToList();
-         
+       
+
 
 
 
@@ -23958,140 +25085,6 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
 
 
 
-
-
-
-    public class FEARONE : StatusEffectApplyX
-    {
-        [SerializeField]
-
-        public override bool TargetSilenced() => false;
-
-        public bool instead;
-
-        public bool whenAnyApplied;
-
-        public string[] whenAppliedTypes = new string[1] { "snow" };
-
-        [SerializeField]
-        public ApplyToFlags whenAppliedToFlags;
-
-        [SerializeField]
-        public int requiredAmount = 0;
-
-        [Header("Adjust Amount Applied")]
-        [SerializeField]
-        public bool adjustAmount;
-
-        [SerializeField]
-        public int addAmount;
-
-        [SerializeField]
-        public float multiplyAmount = 1f;
-
-        public override void Init()
-        {
-            base.PostApplyStatus += Run;
-        }
-
-        public bool CheckType(StatusEffectData effectData)
-        {
-            if (effectData.isStatus)
-            {
-                if (!whenAnyApplied)
-                {
-                    return whenAppliedTypes.Contains(effectData.type);
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        public override bool RunApplyStatusEvent(StatusEffectApply apply)
-        {
-            if ((adjustAmount || instead) && target.enabled && !TargetSilenced() && (target.alive || !targetMustBeAlive) && (bool)apply.effectData && apply.count > 0 && CheckType(apply.effectData) && CheckTarget(apply.target))
-            {
-                if (instead)
-                {
-                    apply.effectData = effectToApply;
-                }
-
-                if (adjustAmount)
-                {
-                    apply.count += addAmount;
-                    apply.count = Mathf.RoundToInt((float)apply.count * multiplyAmount);
-                }
-            }
-
-            return false;
-        }
-
-        public override bool RunPostApplyStatusEvent(StatusEffectApply apply)
-        {
-            if (target.enabled && !TargetSilenced() && (bool)apply.effectData && apply.count > 0 && CheckType(apply.effectData) && CheckTarget(apply.target))
-            {
-                return CheckAmount(apply);
-            }
-
-            return false;
-        }
-
-        public IEnumerator Run(StatusEffectApply apply)
-        {
-            return Run(GetTargets(), apply.count);
-        }
-
-        public bool CheckFlag(ApplyToFlags whenAppliedTo)
-        {
-            return (whenAppliedToFlags & whenAppliedTo) != 0;
-        }
-
-        public bool CheckTarget(Entity entity)
-        {
-            if (!Battle.IsOnBoard(target))
-            {
-                return false;
-            }
-
-            if (entity == target)
-            {
-                return CheckFlag(ApplyToFlags.Self);
-            }
-
-            if (entity.owner == target.owner)
-            {
-                return CheckFlag(ApplyToFlags.Allies);
-            }
-
-            if (entity.owner != target.owner)
-            {
-                return CheckFlag(ApplyToFlags.Enemies);
-            }
-
-            return false;
-        }
-
-        public bool CheckAmount(StatusEffectApply apply)
-        {
-            if (requiredAmount == 0)
-            {
-                return true;
-            }
-
-            StatusEffectData statusEffectData = apply.target.FindStatus(apply.effectData.type);
-            if ((bool)statusEffectData)
-            {
-                return statusEffectData.count >= requiredAmount;
-            }
-
-            return false;
-        }
-    }
-
-
-
     //ANIMATION STATUS APPLIERS-------------------------------------------------------------------------------------------------------------------------- //ANIMATION STATUS APPLIERS--------------------------------------------------------------------------------------------------------------------------
 
     //ANIMATION STATUS APPLIERS--------------------------------------------------------------------------------------------------------------------------
@@ -24103,7 +25096,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
     //ANIMATION STATUS APPLIERS--------------------------------------------------------------------------------------------------------------------------
 
 
-
+    
 
 
     public class StatusEffectInstantGif : StatusEffectInstant
@@ -24115,6 +25108,23 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
 
             VFXHelper.VFX.TryPlayEffect(key: "sp", target.transform.position, target.transform.lossyScale);
             VFXHelper.SFX.TryPlaySound("sp");
+            target.curveAnimator.Ping();
+            yield return new WaitForSeconds(0.01f);
+            yield return base.Process();
+
+        }
+
+    }
+
+    public class shotguninstant : StatusEffectInstant
+    {
+        public float waitFor;
+
+        public override IEnumerator Process()
+        {
+
+            VFXHelper.VFX.TryPlayEffect(key: "sp", target.transform.position, target.transform.lossyScale);
+            VFXHelper.SFX.TryPlaySound("shotgun");
             target.curveAnimator.Ping();
             yield return new WaitForSeconds(0.01f);
             yield return base.Process();

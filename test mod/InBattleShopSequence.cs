@@ -265,7 +265,8 @@ namespace TestMod
 
         //This method creates the shop cards
         //REPLACE: You can replace the itemCardNames (you can even do this from a status effect) or change the implementation of CreateCards entirely.
-        internal static string[] itemCardNames = new string[] { "PTimer", "PNull", "PBlock", "PotionFrenzy", "PRestrict", "PHealth", "Ashi Shi's Vault", "Card Launcher", "Get out", "Blunkytime" };
+        internal static string[] itemCardNames = new string[] { "PTimer", "PNull", "PBlock", "PotionFrenzy", "PRestrict", "PHealth", "Ashi Shi's Vault", "Card Launcher"
+            , "Get out", "Blunkytime", "Ashishi Totem", "Mini Terrormisu"};
         static Card[] CreateCards(Entity shopkeep)
         {
             return itemCardNames

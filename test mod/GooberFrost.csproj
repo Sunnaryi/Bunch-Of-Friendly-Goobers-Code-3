@@ -450,6 +450,8 @@
     <Compile Include="BetterComineSystem.cs" />
     <Compile Include="ButtonStuff.cs" />
     <Compile Include="Class1.cs" />
+    <Compile Include="StatusEffectInstantFillXBoardSlots.cs" />
+    <Compile Include="StatusEffects\FEARONE.cs" />
     <Compile Include="InBattleShopSequence.cs" />
     <Compile Include="PatchInPetFlag.cs" />
     <Compile Include="StatusEffectApplyXOnCardPlayedWithPet.cs" />
@@ -483,6 +485,7 @@
     <Compile Include="StatusEffects\StatusEffectTriggerWhenCertainAllyAttacks.cs" />
     <Compile Include="StatusEffects\StatusEffectWhileActiveXWithBoostableScriptableAmount.cs" />
     <Compile Include="Steamworks\InventoryItem.cs" />
+    <Compile Include="TargetConstraintHealthLessThan.cs" />
     <Compile Include="VFXHelper.cs" />
   </ItemGroup>
   <ItemGroup />
