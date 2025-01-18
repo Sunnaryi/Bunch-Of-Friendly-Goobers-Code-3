@@ -541,6 +541,12 @@ public partial class Goobers : WildfrostMod
             .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
 
 
+        this.CreateIconKeyword("altscrap", "Tower Scrap", "Acts like scrap, for the towers", "altscrap"
+       , new Color(1f, 1f, 1f), new Color(1f, 1f, 0f), new Color(0f, 0f, 0f));
+
+        //make sure you icon is in both the images folder and the sprites subfolder
+        this.CreateIcon("altscrap", ImagePath("altscrap.png").ToSprite(), "altscrap", "frost", Color.white, shadowColor: new Color(0, 0, 0), new KeywordData[] { Get<KeywordData>("altscrap") })
+            .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
 
 
 
@@ -837,9 +843,25 @@ realData.customCardList = ["BerryS", "SugaryS", "OddS", "BloodS"];
         //CARD FINDERS--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+
+    .Create<StatusEffectScrap>("ALTSCRAP")
+    .WithIconGroupName("health")
+    .WithVisible(true)
+    .WithIsStatus(true)
+    .WithStackable(true)
+    .WithOffensive(false)
+    .WithTextInsert("{a}")
+    .WithKeyword("altscrap")
+    .WithType("altscrap")
+  .SubscribeToAfterAllBuildEvent(data =>
+  {
+      data.preventDeath = true;
+  })
+
+            );
 
 
-   
         statusEffects.Add(new StatusEffectDataBuilder(this)
 
        .Create<StatusEffectEthereal>("Decay")
@@ -20497,14 +20519,14 @@ new CardDataBuilder(this).CreateItem("HateuYell", "Harsh Attack Orders")
         cards.Add(
  new CardDataBuilder(this).CreateUnit("SapphireGen", "Sapphire Tower")
  .SetSprites("SAPTOWER.png", "SAPTOWER BG.png")
-.SetStats(10000000, null, 0)
+.SetStats(null, null, 0)
  .WithCardType("Clunker")
  .CanBeHit(false)
  .SubscribeToAfterAllBuildEvent(delegate (CardData data)
  {
      data.startWithEffects = new CardData.StatusEffectStacks[]
                                                    {
-     SStack("Sap row",1),SStack("Scrap",1000),SStack("ELU2",1000)
+     SStack("Sap row",1),SStack("ALTSCRAP",10000),SStack("ELU2",1000)
 
      };
 
@@ -20526,14 +20548,14 @@ new CardDataBuilder(this).CreateItem("HateuYell", "Harsh Attack Orders")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("RubyeGen", "Ruby Tower")
 .SetSprites("RUBYTOWER.png", "RUBYTOWER BG.png")
-.SetStats(10000000, null, 0)
+.SetStats(null, null, 0)
 .WithCardType("Clunker")
  .CanBeHit(false)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                   {
-     SStack("Ruby row",1),SStack("Scrap",1000),SStack("ELU2",1000)
+     SStack("Ruby row",1),SStack("ALTSCRAP",10000),SStack("ELU2",1000)
 
     };
 
@@ -20554,14 +20576,14 @@ new CardDataBuilder(this).CreateUnit("RubyeGen", "Ruby Tower")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("JadeGen", "Jade Tower")
 .SetSprites("JADETOWER.png", "JADETOWER BG.png")
-.SetStats(10000000, null, 0)
+.SetStats(null, null, 0)
 .WithCardType("Clunker")
  .CanBeHit(false)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                   {
-     SStack("Jade row",1),SStack("Scrap",1000),SStack("ELU2",1000)
+     SStack("Jade row",1),SStack("ALTSCRAP",10000),SStack("ELU2",1000)
 
     };
 
@@ -21875,9 +21897,9 @@ SStack("speed",1)
 
 
         cards.Add(
-new CardDataBuilder(this).CreateItem("Horrid Log", "Horrid Log") //0
+new CardDataBuilder(this).CreateUnit("Horrid Log", "Horrid Log") //0
 .SetSprites("HORRIDLOG.png", "HORRIDLOG BG.png")
-.SetStats(null, null)
+.SetStats(1 ,null, 0)
 .WithFlavour("It's no longer spooky")
 .WithCardType("Summoned")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -21934,6 +21956,7 @@ SStack("Uses",3),SStack("Roses to hand",1)
 new CardDataBuilder(this).CreateItem("Roses", "Roses")
 .SetSprites("ROSE.png", "ROSE BG.png")
 .SetStats(null, null)
+.CanPlayOnHand(true)
 .WithCardType("Item")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22012,6 +22035,7 @@ new CardDataBuilder(this).CreateItem("Chained Blade", "Chained Blade") //4
 .SetStats(null, 5)
 .WithCardType("Item")
 .WithText("<keyword=goobers.bind>")
+.CanPlayOnHand(true)
 .WithValue(54)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22040,6 +22064,7 @@ new CardDataBuilder(this).CreateItem("Reckless Healing", "Reckless Heal") //4
 .SetStats(null, 0)
 .WithCardType("Item")
 .WithFlavour("Youre now throwing a fruit at someone")
+.CanPlayOnHand(true)
 .WithValue(63)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22094,6 +22119,7 @@ new CardDataBuilder(this).CreateItem("Bagged Weakening Powder", "Weakening Powde
 .SetStats(null, null)
 .WithCardType("Item")
 .WithFlavour("Bag full of durians")
+.CanPlayOnHand(true)
 .WithValue(48)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22122,6 +22148,7 @@ new CardDataBuilder(this).CreateItem("Berry Potion", "Berry Potion") //7
 .SetStats(null, 0)
 .WithCardType("Item")
 .WithFlavour("Smacking someone with glass")
+.CanPlayOnHand(true)
 .WithValue(57)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22205,6 +22232,7 @@ new CardDataBuilder(this).CreateItem("Furious Infusion", "Furious Infusion") //1
 .SetStats(null, null)
 .WithCardType("Item")
 .WithFlavour("No longer magical")
+.CanPlayOnHand(true)
 .WithValue(80)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22344,6 +22372,7 @@ new CardDataBuilder(this).CreateItem("Blaze Green Tea", "Blaze Green Tea") //15
 .SetStats(null, null)
 .WithCardType("Item")
 .WithFlavour("Empty? SMACK")
+.CanPlayOnHand(true)
 .WithValue(83)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22400,6 +22429,7 @@ new CardDataBuilder(this).CreateItem("Barrier", "Barrier") //16
 .WithCardType("Item")
 .WithText("<keyword=goobers.bind>")
 .WithFlavour("Blockless moment")
+.CanPlayOnHand(true)
 .WithValue(48)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -22656,6 +22686,7 @@ new CardDataBuilder(this).CreateItem("Last Resort", "Last Resort") //24
 .SetStats(null, null)
 .WithCardType("Item")
 .WithFlavour("???")
+.CanPlayOnHand(true)
 .WithText("Can only be played on your cards")
 .WithValue(110)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -22842,6 +22873,7 @@ new CardDataBuilder(this).CreateItem("Furia", "Furia") //30
 .SetSprites("FURIA.png", "FURIA BG.png")
 .SetStats(null, null)
 .WithCardType("Item")
+.CanPlayOnHand(true)
 .WithFlavour("Froggy go >:c")
 .WithValue(70)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -23159,6 +23191,7 @@ new CardDataBuilder(this).CreateItem("Sunflower Spell", "Sunfloria")
 .SetSprites("SUNFLOWERSPELL.png", "SUNFLOWERSPELL BG.png")
 .SetStats(null, null)
 .WithValue(50)
+.CanPlayOnHand(true)
 .WithFlavour("Durian spell!")
 .WithCardType("Item")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -23186,6 +23219,7 @@ new CardDataBuilder(this).CreateItem("Sunflower", "Sunflower")
 .SetSprites("SUNFLOWER.png", "SUNFLOWER BG.png")
 .SetStats(null, null)
 .WithValue(50)
+.CanPlayOnHand(true)
 .WithCardType("Item")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
