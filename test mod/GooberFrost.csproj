@@ -106,6 +106,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="ProjectName">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\workshop\content\1811990\3326406237\ProjectName.dll</HintPath>
+    </Reference>
     <Reference Include="Rewired_Core">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Rewired_Core.dll</HintPath>
     </Reference>
