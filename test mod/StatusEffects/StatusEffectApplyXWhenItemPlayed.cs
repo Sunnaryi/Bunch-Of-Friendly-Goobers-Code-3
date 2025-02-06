@@ -1,4 +1,9 @@
-﻿public partial class Goobers
+﻿using NexPlugin;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public partial class Goobers
 {
     public class StatusEffectApplyXWhenItemPlayed : StatusEffectApplyXOnCardPlayed
     {
@@ -15,14 +20,6 @@
 
 
 }
-
-
-
-
-
-
-
-
 
 
 

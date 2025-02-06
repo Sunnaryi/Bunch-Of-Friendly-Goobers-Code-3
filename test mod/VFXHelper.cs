@@ -4,11 +4,14 @@ using BattleEditor;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using Deadpan.Enums.Engine.Components.Modding;
 
 
 
 public partial class Goobers
 {
+
+
     public class VFXHelper
     {
         public static GIFLoader VFX;
@@ -71,6 +74,17 @@ public partial class Goobers
             return;
         cardData.mainSprite = randomSprites2.RandomItem();
     }
+
+    private void MikuSprites(CardData cardData)
+    {
+        if (cardData.name != "goobers.Miku") // Card name
+            return;
+        if (mikuRandom.Count == 0)
+            return;
+        cardData.mainSprite = mikuRandom.RandomItem();
+    }
+
+
 }
     
 

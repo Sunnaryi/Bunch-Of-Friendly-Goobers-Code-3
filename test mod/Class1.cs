@@ -52,6 +52,12 @@ using DeadExtensions;
 using System.Security;
 using Frostknights;
 using UnityEngine.Tilemaps;
+using System.IO;
+using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.AddressableAssets;
+using UnityEngine.U2D;
+using System.Runtime.InteropServices.ComTypes;
+using Goobers2;
 
 
 
@@ -90,6 +96,10 @@ public partial class Goobers : WildfrostMod
     public static int timeout = 40;
     public Goobers(string modDirectory) : base(modDirectory)
     {
+
+        HarmonyInstance.PatchAll(typeof(PatchHarmony));
+
+
         Instance = this;
         while (Bootstrap.Mods.Count == 0 && timePassed < timeout)
         {
@@ -128,6 +138,8 @@ public partial class Goobers : WildfrostMod
     public static string TribeTitleKey => "goobers" + ".TribeTitle";
     public static string TribeDescKey => "goobers" + ".TribeDesc";
 
+ 
+
 
     private List<CardDataBuilder> cards;
     private List<CardUpgradeDataBuilder> cardUpgrades;   //The list of custom CardData(Builder)
@@ -142,7 +154,7 @@ public partial class Goobers : WildfrostMod
 
     private List<Sprite> randomSprites = new List<Sprite>();
     private List<Sprite> randomSprites2 = new List<Sprite>();
-
+    private List<Sprite> mikuRandom = new List<Sprite>();
 
     private Sprite GetSprite(string name)
     {
@@ -163,13 +175,19 @@ public partial class Goobers : WildfrostMod
         randomSprites.Add(GetSprite("FAKECHEST5.png"));
         randomSprites.Add(GetSprite("FAKECHEST6.png"));
 
+        randomSprites2.Add(GetSprite("REALCHEST.png"));
         randomSprites2.Add(GetSprite("REALCHEST2.png"));
         randomSprites2.Add(GetSprite("REALCHEST3.png"));
         randomSprites2.Add(GetSprite("REALCHEST4.png"));
         randomSprites2.Add(GetSprite("REALCHEST5.png"));
         randomSprites2.Add(GetSprite("REALCHEST6.png"));
 
-      
+        mikuRandom.Add(GetSprite("MIKU2.png"));
+        mikuRandom.Add(GetSprite("MIKU3.png"));
+        mikuRandom.Add(GetSprite("MIKU1.png"));
+
+
+
 
 
 
@@ -301,7 +319,7 @@ public partial class Goobers : WildfrostMod
         this.CreateIcon("imink", ImagePath("imink.png").ToSprite(), "inkfull", "frost", Color.black, new KeywordData[] { Get<KeywordData>("inkfull") })
             .GetComponentInChildren<TextMeshProUGUI>(true).enabled = false;
 
-        this.CreateIconKeyword("elu", "Elusive", "Cannot be hit.", "eluicon"
+        this.CreateIconKeyword("elu", "Special Elusive", "Cannot be hit.", "eluicon"
 , new Color(1f, 1f, 1f), new Color(5f, 5f, 1f), new Color(0f, 0f, 0f));
 
         //make sure you icon is in both the images folder and the sprites subfolder
@@ -529,7 +547,7 @@ public partial class Goobers : WildfrostMod
 , new Color(1f, 1f, 1f), new Color(1f, 1f, 1f), new Color(0f, 0f, 0f));
 
         //make sure you icon is in both the images folder and the sprites subfolder
-        this.CreateIcon("Jolticon", ImagePath("Jolticon.png").ToSprite(), "jolt", "frost", Color.black, shadowColor: new Color(0, 0, 0), new KeywordData[] { Get<KeywordData>("jolt") })
+        this.CreateIcon("Jolticon", ImagePath("Jolticon.png").ToSprite(), "jolt", "frost", Color.black, shadowColor: new Color(0.6f, 0.8f, 0), new KeywordData[] { Get<KeywordData>("jolt") })
             .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
 
 
@@ -549,8 +567,45 @@ public partial class Goobers : WildfrostMod
             .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
 
 
+        this.CreateIconKeyword("hidew", "Elusive", "Temporarily cannot be hit, still vulnerable to allies that are <keyword=haze>'d or <keyword=overload> damage| Counts down after triggering, cannot be applied to units without a counter or with the trait Taunt.", "eluicon"
+      , new Color(1f, 1f, 1f), new Color(1f, 1f, 0f), new Color(0f, 0f, 0f));
+
+        //make sure you icon is in both the images folder and the sprites subfolder
+        this.CreateIcon("eluicon", ImagePath("eluicon.png").ToSprite(), "hidew", "frost", Color.black, shadowColor: new Color(0, 0.7f, 0.8f), new KeywordData[] { Get<KeywordData>("hidew") })
+            .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
+
+        this.CreateIconKeyword("burnage", "Burnage", "When hit, deal <Inferno> damage to allies in the row. Take 1 <Fire> damage every turn. | Clears when hit, counts down by 2 every turn.", "burnage"
+ , new Color(1f, 1f, 1f), new Color(1f, 1f, 0f), new Color(0f, 0f, 0f));
+
+        //make sure you icon is in both the images folder and the sprites subfolder
+        this.CreateIcon("burnage", ImagePath("burnage.png").ToSprite(), "burnage", "frost", Color.white, shadowColor: new Color(0.4f, 0f, 0f), new KeywordData[] { Get<KeywordData>("burnage") })
+            .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
 
 
+        this.CreateIconKeyword("melody", "Thinking Miku", "Temporarly triple effects| Counts down when triggered", "melodyicon"
+, new Color(1f, 1f, 1f), new Color(0f, 0.6f, 0.8f), new Color(0f, 0f, 0f));
+
+        //make sure you icon is in both the images folder and the sprites subfolder
+        this.CreateIcon("melodyicon", ImagePath("melodyicon.png").ToSprite(), "melody", "frost", Color.white, shadowColor: new Color(0f, 0.4f, 0.6f), new KeywordData[] { Get<KeywordData>("melody") })
+            .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
+
+        this.CreateIconKeyword("mikusupport", "Hand in Hand", "On turn, gain 2 <keyword=attack>| Counts down when triggered", "supportmikuicon"
+, new Color(1f, 1f, 1f), new Color(1f, 1f, 0f), new Color(0f, 0f, 0f));
+
+        //make sure you icon is in both the images folder and the sprites subfolder
+        this.CreateIcon("supportmikuicon", ImagePath("supportmikuicon.png").ToSprite(), "mikusupport", "frost", Color.white, shadowColor: new Color(0f, 0.4f, 0.6f), new KeywordData[] { Get<KeywordData>("mikusupport") })
+            .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
+
+
+        this.CreateIconKeyword("mikucharm", "Rabbit Hole", "Upon triggering reduce <keyword=attack> by 1| Counts down when triggered", "rabbitholeicon"
+, new Color(1f, 1f, 1f), new Color(1f, 1f, 0f), new Color(0f, 0f, 0f));
+
+        //make sure you icon is in both the images folder and the sprites subfolder
+        this.CreateIcon("rabbitholeicon", ImagePath("rabbitholeicon.png").ToSprite(), "mikucharm", "frost", Color.white, shadowColor: new Color(0f, 0.4f, 0.6f), new KeywordData[] { Get<KeywordData>("mikucharm") })
+            .GetComponentInChildren<TextMeshProUGUI>(true).enabled = true;
+
+        this.CreateIconKeyword("unfrenzy", "Rabbit Hole", "Upon triggering reduce <keyword=attack> by 1| Counts down when triggered", "rabbitholeicon"
+, new Color(1f, 1f, 1f), new Color(1f, 1f, 0f), new Color(0f, 0f, 0f));
         //ENEMY EFFECTS
 
         statusEffects.Add(
@@ -694,10 +749,10 @@ new StatusEffectDataBuilder(this)
    var se = data as StatusEffectApplyXWhenYAppliedTo;
    se.whenAppliedTypes = new string[] { "frenzy" };
    se.whenAppliedToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-   se.effectToApply = null;
-   se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-   se.instead = true;
-   se.targetMustBeAlive = false;
+   se.effectToApply = TryGet<StatusEffectData>("Notvisible");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+   se.instead = TryGet<StatusEffectData>("Notvisible");
+    se.targetMustBeAlive = false;
     se.textKey = null;
 }));
         statusEffects.Add(StatusCopy("When Spice Or Shell Applied To Self Shroom To RandomEnemy", "Owntempo2")
@@ -707,8 +762,8 @@ new StatusEffectDataBuilder(this)
 var se = data as StatusEffectApplyXWhenYAppliedTo;
 se.whenAppliedTypes = new string[] { "ex" };
 se.whenAppliedToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-se.effectToApply = null;
-se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.effectToApply = TryGet<StatusEffectData>("Notvisible");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
 se.instead = true;
 se.targetMustBeAlive = false;
 se.textKey = null;
@@ -730,7 +785,7 @@ se.textKey = null;
 
        se.whenAppliedTypes = new string[] { "snow" };
        se.whenAppliedToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-       se.effectToApply = null;
+       se.effectToApply = TryGet<StatusEffectData>("Notvisible");
        se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
        se.instead = true;
        se.targetMustBeAlive = false;
@@ -752,7 +807,7 @@ se.textKey = null;
         var se = data as StatusEffectApplyXWhenYAppliedTo;
         se.whenAppliedTypes = new string[] { "ink" };
         se.whenAppliedToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-        se.effectToApply = null;
+        se.effectToApply = TryGet<StatusEffectData>("Notvisible"); 
         se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
         se.instead = true;
         se.targetMustBeAlive = false;
@@ -842,6 +897,39 @@ realData.customCardList = ["BerryS", "SugaryS", "OddS", "BloodS"];
         //CARD FINDERS--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         //CARD FINDERS--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+
+.Create<StatusEffectStealthy>("Hidden")
+.WithIconGroupName("health")
+.WithVisible(true)
+.WithIsStatus(true)
+.WithStackable(true)
+.WithOffensive(false)
+.WithTextInsert("{a}")
+.WithKeyword("hidew")
+.WithType("hidew")
+   .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
+   {
+       var realData = data as StatusEffectStealthy;
+       data.applyFormatKey = TryGet<StatusEffectData>("Shroom").applyFormatKey;
+
+       realData.targetConstraints = new TargetConstraint[]
+                        {
+
+       new TargetConstraintMaxCounterMoreThan(){moreThan=0},  new TargetConstraintHasTrait()
+                        {
+                            not= true, trait = Get<TraitData>("Taunt")
+
+                        },
+       new TargetConstraintIsUnit()
+
+            };
+
+
+   }
+
+
+          ));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
 
@@ -861,6 +949,34 @@ realData.customCardList = ["BerryS", "SugaryS", "OddS", "BloodS"];
 
             );
 
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+
+  .Create<StatusEffectEXP>("owntempoing")
+  .WithStackable(true)
+  .WithIsStatus(true)
+  .WithOffensive(false)
+  .WithTextInsert("{a}")
+  .WithType("unfrenzy")
+
+          );
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+
+      .Create<StatusEffectBurning>("Burnage")
+      .WithIconGroupName("health")
+      .WithVisible(true)
+      .WithIsStatus(true)
+      .WithStackable(true)
+      .WithOffensive(true)
+      .WithTextInsert("{a}")
+      .WithKeyword("burnage")
+      .WithType("burnage")
+         .SubscribeToAfterAllBuildEvent(data =>
+         {
+             data.applyFormatKey = TryGet<StatusEffectData>("Shroom").applyFormatKey;
+         })
+
+            );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
 
@@ -890,6 +1006,77 @@ realData.customCardList = ["BerryS", "SugaryS", "OddS", "BloodS"];
 
 
           );
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+
+            .Create<StatusEffectMelodyScale>("ThinkinMiku")
+            .WithIconGroupName("crown")
+            .WithVisible(true)
+            .WithIsStatus(true)
+            .WithStackable(true)
+            .WithOffensive(false)
+            .WithTextInsert("{a}")
+            .WithKeyword("melody")
+            .WithType("melody")
+            .SubscribeToAfterAllBuildEvent(data =>
+            {
+
+
+
+                data.applyFormatKey = TryGet<StatusEffectData>("Shroom").applyFormatKey;
+                data.targetConstraints = new TargetConstraint[]
+                  {
+              new TargetConstraintCanBeBoosted(),
+            new TargetConstraintIsSpecificCard()
+                        {
+          not = true, allowedCards = new CardData[] { TryGet<CardData>("SapphireGen"), TryGet<CardData>("RubyeGen"), TryGet<CardData>("JadeGen")
+                            },
+        } };
+            })
+
+            );
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+
+        .Create<StatusEffectMikuSupport>("HandinHand")
+        .WithIconGroupName("damage")
+        .WithVisible(true)
+        .WithIsStatus(true)
+        .WithStackable(true)
+        .WithOffensive(false)
+        .WithTextInsert("{a}")
+        .WithKeyword("mikusupport")
+        .WithType("mikusupport")
+        .SubscribeToAfterAllBuildEvent(data =>
+        {
+
+
+
+            data.applyFormatKey = TryGet<StatusEffectData>("Shroom").applyFormatKey;
+        })
+
+        );
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+
+.Create<StatusEffectMikuCharm>("Rabbithole")
+.WithIconGroupName("damage")
+.WithVisible(true)
+.WithIsStatus(true)
+.WithStackable(true)
+.WithOffensive(true)
+.WithTextInsert("{a}")
+.WithKeyword("mikucharm")
+.WithType("mikucharm")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+
+
+
+    data.applyFormatKey = TryGet<StatusEffectData>("Shroom").applyFormatKey;
+})
+
+);
+
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
 
@@ -908,6 +1095,7 @@ realData.customCardList = ["BerryS", "SugaryS", "OddS", "BloodS"];
 
 
                 data.applyFormatKey = TryGet<StatusEffectData>("Shroom").applyFormatKey;
+               
             })
 
             );
@@ -2484,26 +2672,52 @@ new StatusEffectDataBuilder(this)
         );
         statusEffects.Add(
             StatusCopy("Instant Summon Junk In Hand", "Instant Summon Rift In Hand")
+               .WithStackable(true)
+                .WithCanBeBoosted(true)
                 .SubscribeToAfterAllBuildEvent(data =>
                 {
                     (data as StatusEffectInstantSummon).targetSummon = TryGet<StatusEffectData>("Summon Rift") as StatusEffectSummon;
                     CardDiscoverSystem.instance.DiscoverCard("goobers.Rift");
+                    (data as StatusEffectInstantSummon).canSummonMultiple = true;
                 })
         );
 
         statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantSummonRandomFromPool>("rift nowpls")
+.WithText("Test Soda.")
+.WithStackable(true)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantSummonRandomFromPool;
+
+realData.canSummonMultiple = true;
+realData.targetSummon = TryGet<StatusEffectSummon>("Summon Junk");
+realData.summonPosition = StatusEffectInstantSummon.Position.Hand;
+realData.pool = GetCards(
+
+
+      "Rift"
+
+ );
+}
+));
+
+        statusEffects.Add(
             new StatusEffectDataBuilder(this)
-                .Create<StatusEffectApplyXOnTurn>("Add Rift to Hand")
+                .Create<StatusEffectApplyXPreTurn>("Add Rift to Hand")
                 .WithText("Add <{a}> {0} to your hand.")
                 .WithTextInsert("<card=goobers.Rift>")
                 .WithStackable(true)
                 .WithCanBeBoosted(true)
                 .SubscribeToAfterAllBuildEvent(data =>
                 {
-                    var realData = data as StatusEffectApplyX;
+                    var realData = data as StatusEffectApplyXPreTurn;
 
-                    realData.effectToApply = TryGet<StatusEffectData>("Instant Summon Rift In Hand");
+                    realData.effectToApply = TryGet<StatusEffectData>("rift nowpls");
                     realData.applyToFlags = ApplyToFlags.Self;
+
                 })
         );
 
@@ -2524,14 +2738,14 @@ new StatusEffectDataBuilder(this)
 
         statusEffects.Add(
             new StatusEffectDataBuilder(this)
-                .Create<StatusEffectApplyXOnTurn>("Add Bone Needle to Hand")
+                .Create<StatusEffectApplyXPreTurn>("Add Bone Needle to Hand")
                 .WithText("Add <{a}> {0} to your hand.")
                 .WithTextInsert("<card=goobers.Bone Needle>")
                 .WithStackable(true)
                 .WithCanBeBoosted(true)
                 .SubscribeToAfterAllBuildEvent(data =>
                 {
-                    var realData = data as StatusEffectApplyX;
+                    var realData = data as StatusEffectApplyXPreTurn;
 
                     realData.effectToApply = TryGet<StatusEffectData>("Instant Summon One Needle In Hand");
                     realData.applyToFlags = ApplyToFlags.Self;
@@ -3029,7 +3243,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
    new StatusEffectDataBuilder(this)
        .Create<StatusEffectApplyXWhenYAppliedTo>("Not Fast Enough")
-       .WithText("When my <keyword=sps> reaches 11, I'm leaving.")
+       .WithText("When my <keyword=sps> reaches {a}, I'm leaving.")
        .WithCanBeBoosted(false)
        .WithTextInsert(null)
         .SubscribeToAfterAllBuildEvent(data =>
@@ -3048,10 +3262,10 @@ new StatusEffectDataBuilder(this)
 
 
         // FOR YRA BOTS-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-      
 
 
-  
+
+
 
 
 
@@ -3064,125 +3278,86 @@ new StatusEffectDataBuilder(this)
 
         // FOR YRA BOTS
         //TALA PLANTS---------------------------------------------------------------------------------------------
-        statusEffects.Add(
-       StatusCopy("Summon Junk", "Summon Nightshade")
-   .SubscribeToAfterAllBuildEvent(data =>
-   {
-       (data as StatusEffectSummon).summonCard = TryGet<CardData>("Nightshade");
-   })
-   );
-        statusEffects.Add(
-            StatusCopy("Instant Summon Junk In Hand", "Instant Summon Nightshade In Hand")
-                .SubscribeToAfterAllBuildEvent(data =>
-                {
-                    (data as StatusEffectInstantSummon).targetSummon = TryGet<StatusEffectData>("Summon Nightshade") as StatusEffectSummon;
-                })
-        );
+
 
         statusEffects.Add(
-       StatusCopy("Summon Junk", "Summon Tomatoes")
+   new StatusEffectDataBuilder(this)
+   .Create<StatusEffectInstantSummonRandomFromPool>("Tala random")
+   .WithText("Test Soda.")
+   .WithStackable(true)
+   .WithCanBeBoosted(false)
    .SubscribeToAfterAllBuildEvent(data =>
    {
-       (data as StatusEffectSummon).summonCard = TryGet<CardData>("Tomatoes");
-   })
-   );
-        statusEffects.Add(
-            StatusCopy("Instant Summon Junk In Hand", "Instant Summon Tomatoes In Hand")
-                .SubscribeToAfterAllBuildEvent(data =>
-                {
-                    (data as StatusEffectInstantSummon).targetSummon = TryGet<StatusEffectData>("Summon Tomatoes") as StatusEffectSummon;
-                })
-        );
+       var realData = data as StatusEffectInstantSummonRandomFromPool;
 
+       realData.canSummonMultiple = true;
+       realData.targetSummon = TryGet<StatusEffectSummon>("Summon Junk");
+       realData.summonPosition = StatusEffectInstantSummon.Position.Hand;
+       realData.pool = GetCards(
+
+
+          "Nightshadetala", "Tomatoes"
+
+ );
+   }
+   ));
         statusEffects.Add(
           new StatusEffectDataBuilder(this)
-          .Create<StatusEffectApplyRandomOnCardPlayed>("Random Tala")
+          .Create<StatusEffectApplyXPreTurn>("Random Tala")
           .WithText("Gain <{a}> either {0} to your hand")
-          .WithTextInsert("<card=goobers.Nightshade> or <card=goobers.Tomatoes>")
+          .WithTextInsert("<card=goobers.Nightshadetala> or <card=goobers.Tomatoes>")
           .WithStackable(true)
           .WithCanBeBoosted(true)
           .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
           {
-              ((StatusEffectApplyRandomOnCardPlayed)data).applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
-              ((StatusEffectApplyRandomOnCardPlayed)data).effectsToapply = new StatusEffectData[]
-              {
-                   Get<StatusEffectData>("Instant Summon Tomatoes In Hand"),
-                   Get<StatusEffectData>("Instant Summon Nightshade In Hand")
+              ((StatusEffectApplyXPreTurn)data).applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+              ((StatusEffectApplyXPreTurn)data).effectToApply = TryGet<StatusEffectData>("Tala random");
 
-              };
+
           }
           ));
         //FOR AYRA------------------------------------------------------------------------------------------------
 
         statusEffects.Add(
-          StatusCopy("Summon Fallow", "Summon AYraB1")
-         .WithText("Summon {0}")                                       //Since this effect is on Shade Serpent, we modify the description shown.
-         .WithTextInsert("<card=goobers.AYraB1>")                                                         //Makes a copy of the Summon Fallow effect
-         .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
-         {
-             ((StatusEffectSummon)data).summonCard = TryGet<CardData>("AYraB1"); //Alternatively, I could've put TryGet<CardData>("mhcdc9.wildfrost.tutorial.shadeSnake") or TryGet<CardData>(Extensions.PrefixGUID("shadeSnake",this)) or the Get variants too
-                                                                                 //This is because TryGet will try to prefix the name with your GUID. 
-         })                                                                          //If that fails, then it uses no GUID-prefixing.
-          );
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantSummonRandomFromPool>("Yra random")
+.WithText("Test Soda.")
+.WithStackable(true)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+   var realData = data as StatusEffectInstantSummonRandomFromPool;
+
+   realData.canSummonMultiple = true;
+   realData.targetSummon = TryGet<StatusEffectSummon>("Summon Junk");
+   realData.summonPosition = StatusEffectInstantSummon.Position.Hand;
+   realData.pool = GetCards(
+
+
+      "AYraB1", "AYraB2", "AYraB3"
+
+);
+}
+));
+
+
+
+
         statusEffects.Add(
-        StatusCopy("Instant Summon Fallow", "Instant Summon AYraB1") //Copying Instant Summon Fallow and changing the name.
-           .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)   //Replacing the targetSummon with our StatusEffectSummon, once the time is right. 
-           {
-               ((StatusEffectInstantSummon)data).targetSummon = TryGet<StatusEffectSummon>("Summon AYraB1");
-           })
-         );
-        statusEffects.Add(
-          StatusCopy("Summon Fallow", "Summon AYraB2")
-         .WithText("Summon {0}")                                       //Since this effect is on Shade Serpent, we modify the description shown.
-         .WithTextInsert("<card=goobers.GoopFlies>")                                                         //Makes a copy of the Summon Fallow effect
-         .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
-         {
-             ((StatusEffectSummon)data).summonCard = TryGet<CardData>("AYraB2"); //Alternatively, I could've put TryGet<CardData>("mhcdc9.wildfrost.tutorial.shadeSnake") or TryGet<CardData>(Extensions.PrefixGUID("shadeSnake",this)) or the Get variants too
-                                                                                 //This is because TryGet will try to prefix the name with your GUID. 
-         })                                                                          //If that fails, then it uses no GUID-prefixing.
-          );
-        statusEffects.Add(
-        StatusCopy("Instant Summon Fallow", "Instant Summon AYraB2") //Copying Instant Summon Fallow and changing the name.
-           .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)   //Replacing the targetSummon with our StatusEffectSummon, once the time is right. 
-           {
-               ((StatusEffectInstantSummon)data).targetSummon = TryGet<StatusEffectSummon>("Summon AYraB2");
-           })
-         );
-        statusEffects.Add(
-          StatusCopy("Summon Fallow", "Summon AYraB3")
-         .WithText("Summon {0}")                                       //Since this effect is on Shade Serpent, we modify the description shown.
-         .WithTextInsert("<card=goobers.GoopFlies>")                                                         //Makes a copy of the Summon Fallow effect
-         .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
-         {
-             ((StatusEffectSummon)data).summonCard = TryGet<CardData>("AYraB3"); //Alternatively, I could've put TryGet<CardData>("mhcdc9.wildfrost.tutorial.shadeSnake") or TryGet<CardData>(Extensions.PrefixGUID("shadeSnake",this)) or the Get variants too
-                                                                                 //This is because TryGet will try to prefix the name with your GUID. 
-         })                                                                          //If that fails, then it uses no GUID-prefixing.
-          );
-        statusEffects.Add(
-        StatusCopy("Instant Summon Fallow", "Instant Summon AYraB3") //Copying Instant Summon Fallow and changing the name.
-           .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)   //Replacing the targetSummon with our StatusEffectSummon, once the time is right. 
-           {
-               ((StatusEffectInstantSummon)data).targetSummon = TryGet<StatusEffectSummon>("Summon AYraB3");
-           })
-         );
-        statusEffects.Add(
-        new StatusEffectDataBuilder(this)
-        .Create<StatusEffectApplyRandomOnCardPlayed>("Random AYraBot")
+       new StatusEffectDataBuilder(this)
+       .Create<StatusEffectApplyXPreTurn>("Random AYraBot")
         .WithText("Summon <{a}> random Yra Bot.{0}")
          .WithTextInsert("<card=goobers.AYraB1>,<card=goobers.AYraB2>,<card=goobers.AYraB3>")
-        .WithStackable(false)
+        .WithStackable(true)
         .WithCanBeBoosted(true)
-        .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
-        {
-            ((StatusEffectApplyRandomOnCardPlayed)data).applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-            ((StatusEffectApplyRandomOnCardPlayed)data).effectsToapply = new StatusEffectData[]
-            {
-                   Get<StatusEffectData>("Instant Summon AYraB1"),
-                   Get<StatusEffectData>("Instant Summon AYraB2"),
-                   Get<StatusEffectData>("Instant Summon AYraB3"),
-            };
-        })
-        );
+          .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+          {
+              ((StatusEffectApplyXPreTurn)data).applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+              ((StatusEffectApplyXPreTurn)data).effectToApply = TryGet<StatusEffectData>("Yra random");
+
+
+          }
+          ));
         //TALA PLANTS---------------------------------------------------------------------------------------------
         //FOR VENDING MACHINE
         statusEffects.Add(
@@ -5274,13 +5449,13 @@ StatusCopy("Summon Junk", "Summon Blood Cake")
 
         statusEffects.Add(
  new StatusEffectDataBuilder(this)
-     .Create<StatusEffectApplyXOnTurn>("Get ritual cake")
+     .Create<StatusEffectApplyXPreTurn>("Get ritual cake")
      .WithText("Gain <{a}> <card=goobers.Blood Cake> to your hand.")
      .WithStackable(true)
      .WithCanBeBoosted(true)
       .SubscribeToAfterAllBuildEvent(data =>
       {
-          var realData = data as StatusEffectApplyXOnTurn;
+          var realData = data as StatusEffectApplyXPreTurn;
 
           realData.effectToApply = TryGet<StatusEffectData>("Instant Summon Blood Cake");
           realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
@@ -5779,7 +5954,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
       .Create<StatusEffectApplyXOnTurn>("Increase Effects To FrontAlly")
-      .WithText("Increase the effects of the ally ahead by <{a}>")
+      .WithText("Apply <{a}> <keyword=energy> to ally ahead")
       .WithStackable(true)
       .WithCanBeBoosted(true)
       .SubscribeToAfterAllBuildEvent(data =>
@@ -5788,7 +5963,7 @@ new StatusEffectDataBuilder(this)
 
           realData.eventPriority = 1;
           realData.targetMustBeAlive = true;
-          realData.effectToApply = TryGet<StatusEffectData>("Increase Effects");
+          realData.effectToApply = TryGet<StatusEffectData>("Energy");
           realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
       }));
 
@@ -8032,6 +8207,7 @@ new StatusEffectDataBuilder(this)
 .Create<StatusEffectNextPhase>("QueentoAmazon")
 .WithStackable(true)
 .WithCanBeBoosted(false)
+.WithType("nextphase")
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
 var realData = data as StatusEffectNextPhase;
@@ -8049,6 +8225,7 @@ var realData = data as StatusEffectNextPhase;
  .Create<StatusEffectNextPhase>("AmazontoKing")
  .WithStackable(true)
  .WithCanBeBoosted(false)
+ .WithType("nextphase")
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
      var realData = data as StatusEffectNextPhase;
@@ -8057,10 +8234,6 @@ var realData = data as StatusEffectNextPhase;
      realData.preventDeath = true;
      realData.animation = TryGet<StatusEffectNextPhase>("FinalBossPhase2").animation;
     
-
-
-
-     
  }));
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
@@ -9477,6 +9650,7 @@ new StatusEffectDataBuilder(this)
      .Create<StatusEffectNextPhase>("DortoExe")
  .WithStackable(true)
  .WithCanBeBoosted(false)
+ .WithType("nextphase")
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
      var realData = data as StatusEffectNextPhase;
@@ -9492,7 +9666,7 @@ new StatusEffectDataBuilder(this)
     new StatusEffectDataBuilder(this)
     .Create<StatusEffectNextPhase>("Exetocre")
 .WithStackable(true)
-.WithCanBeBoosted(false)
+.WithCanBeBoosted(false).WithType("nextphase")
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
     var realData = data as StatusEffectNextPhase;
@@ -9507,7 +9681,7 @@ new StatusEffectDataBuilder(this)
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectNextPhase>("Cretopea")
 .WithStackable(true)
-.WithCanBeBoosted(false)
+.WithCanBeBoosted(false).WithType("nextphase")
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
 var realData = data as StatusEffectNextPhase;
@@ -10319,7 +10493,7 @@ realData.targetMustBeAlive = false;
 
         statusEffects.Add(
         StatusCopy("On Hit Equal Heal To FrontAlly", "Nom nom yummy")
-        .WithText("Restore <keyword=health> equal to damage dealt to self")                                       //Since this effect is on Shade Serpent, we modify the description shown.
+        .WithText("Restore <keyword=health> equal to damage dealt")                                       //Since this effect is on Shade Serpent, we modify the description shown.
         .WithTextInsert("")                                                         //Makes a copy of the Summon Fallow effect
         .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
         {
@@ -11050,17 +11224,17 @@ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Enemies;
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveX>("Maid Now cabinate")
-.WithText("While active, allies in the row gain <keyword=goobers.maid> <{a}>")
+.Create<StatusEffectApplyXOnTurn>("Maid Now cabinate")
+.WithText("Apply <keyword=goobers.maid> <{a}> to ally ahead.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(data =>
 {
-var realData = data as StatusEffectWhileActiveX;
+var realData = data as StatusEffectApplyXOnTurn;
 
 
 realData.effectToApply = TryGet<StatusEffectData>("Temporary Maid");
-realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AlliesInRow;
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
 
 
 })
@@ -11264,7 +11438,7 @@ new StatusEffectDataBuilder(this)
 
   realData.effectToApply = TryGet<StatusEffectData>("Reduce Effects");
   realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-  realData.eventPriority = 5;
+  realData.eventPriority = 99999999;
   realData.targetMustBeAlive = false;
 
 
@@ -11708,7 +11882,7 @@ new StatusEffectDataBuilder(this)
 
    realData.effectToApply = TryGet<StatusEffectData>("EXP");
    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
-    realData.applyEqualAmount = true;
+   realData.applyEqualAmount = true;
    realData.eventPriority = 2;
 }
        ));
@@ -11886,7 +12060,7 @@ CardDiscoverSystem.instance.DiscoverCard("Drain Flower");
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
 
-   .Create<StatusEffectEXP>("SAP")
+   .Create<StatusEffectGEM>("SAP")
    .WithIconGroupName("damage")
    .WithText("Apply <{a}> <keyword=sap>")
    .WithVisible(true)
@@ -11902,7 +12076,7 @@ CardDiscoverSystem.instance.DiscoverCard("Drain Flower");
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
 
-.Create<StatusEffectEXP>("RUBY")
+.Create<StatusEffectGEM>("RUBY")
 .WithIconGroupName("damage")
 .WithText("Apply <{a}> <keyword=ruby")
 .WithVisible(true)
@@ -11916,7 +12090,7 @@ CardDiscoverSystem.instance.DiscoverCard("Drain Flower");
 );
         statusEffects.Add(new StatusEffectDataBuilder(this)
 
-.Create<StatusEffectEXP>("JADE")
+.Create<StatusEffectGEM>("JADE")
 .WithIconGroupName("damage")
 .WithText("Apply <{a}> <keyword=jade")
 .WithVisible(true)
@@ -12076,9 +12250,12 @@ StatusCopy("Reduce Attack", "Reduce AttackN")
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
   .Create<StatusEffectInstantIncreaseCounter2>("Count Up Counter")
+  .WithText("Count up <keyword=counter> by <{a}>")
 .WithIsStatus(true)
 .WithCanBeBoosted(true)
 );
+
+      
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
@@ -12102,7 +12279,7 @@ StatusCopy("Reduce Attack", "Reduce AttackN")
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-            .Create<SpeedEffectData>("speed")
+            .Create<HasteEffectData>("haste")
             .WithText("<keyword=goobers.speed>")
 
 
@@ -12284,14 +12461,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-    .Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Attack Gain")
+    .Create<StatusEffectApplyXWhileHavingY>("SAP: Attack Gain")
 .WithText("<keyword=sap> - Gain <+{a}><keyword=attack>")
     .WithStackable(true)
     .WithCanBeBoosted(false)
     .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
     {
-        var se = data as StatusEffectWhileActiveXBoostableScriptable;
-        se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+        var se = data as StatusEffectApplyXWhileHavingY;
+        se.targetType = "sap";
         se.effectToApply = Get<StatusEffectData>("On Turn Apply Attack To Self");
         se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
         se.eventPriority = 100;
@@ -12300,14 +12477,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Attack Apply")
+ .Create<StatusEffectApplyXWhileHavingY>("Ruby: Attack Apply")
 .WithText("<keyword=ruby> - Apply <+{a}><keyword=attack> to ally in the column")
  .WithStackable(true)
  .WithCanBeBoosted(false)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "ruby";
      se.effectToApply = Get<StatusEffectData>("Column increase atk");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -12315,14 +12492,14 @@ new StatusEffectDataBuilder(this)
  }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Item left boost")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Item left boost")
 .WithText("<keyword=jade> - Apply <{a}><keyword=energy> to the leftmost card in your hand")
 .WithStackable(true)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Energy to Leftmost");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12332,7 +12509,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayedToAllyInColumn>("Column increase atk")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12346,7 +12523,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("Energy to Leftmost")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12356,10 +12533,10 @@ new StatusEffectDataBuilder(this)
     realData.targetMustBeAlive = true;
     realData.effectToApply = TryGet<StatusEffectData>("Energy");
     realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Hand;
-    realData.applyConstraints = new[]
+    realData.applyConstraints = new TargetConstraint[]
                   {
 
-                        new TargetConstraintLeftmostAnythingInHand()
+                        new TargetConstraintLeftmostAnythingInHand(),new TargetConstraintCanBeBoosted()
 
                    };
 }));
@@ -12367,7 +12544,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("Energy to infront")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12383,7 +12560,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayedToAllyInColumn>("Energy vert")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12395,14 +12572,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Ally charge")
+ .Create<StatusEffectApplyXWhileHavingY>("SAP: Ally charge")
 .WithText("<keyword=sap> - apply <{a}><keyword=energy> to ally within the column and infront")
  .WithStackable(true)
  .WithCanBeBoosted(false)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "sap";
      se.effectToApply = Get<StatusEffectData>("Energy to infront");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -12410,13 +12587,13 @@ new StatusEffectDataBuilder(this)
  }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Ally chargeVert")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Ally chargeVert")
 .WithStackable(true)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Energy vert");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12430,7 +12607,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXPreTurn>("Gain attack preturn")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12464,7 +12641,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("Heal self now")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12479,14 +12656,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Attack Apply SELF")
-.WithText("<keyword=ruby> - Before attacking, <+{a}><keyword=attack> to self, but take 2 damage.")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Attack Apply SELF")
+.WithText("<keyword=ruby> - Before attacking, <+{a}><keyword=attack> to self, but take 3 damage.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Gain attack preturn");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12494,13 +12671,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Attack ApplyHURT")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Attack ApplyHURT")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Hurt self preturn");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12508,14 +12685,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: heal self")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: heal self")
 .WithText("<keyword=jade> - Restore <{a}> <keyword=health>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Heal self now");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12576,12 +12753,12 @@ StatusCopy("Summon Junk", "Summon Rememberance")
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
-.Create<StatusEffectApplyXOnTurn>("Foretell future")
-.WithStackable(true)
+.Create<StatusEffectApplyXPreTrigger>("Foretell future")
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
-    var realData = data as StatusEffectApplyXOnTurn;
+    var realData = data as StatusEffectApplyXPreTrigger;
 
     realData.eventPriority = 1;
     realData.targetMustBeAlive = true;
@@ -12592,12 +12769,12 @@ new StatusEffectDataBuilder(this)
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
-.Create<StatusEffectApplyXOnTurn>("Remember Past")
-.WithStackable(true)
+.Create<StatusEffectApplyXPreTrigger>("Remember Past")
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
-    var realData = data as StatusEffectApplyXOnTurn;
+    var realData = data as StatusEffectApplyXPreTrigger;
 
     realData.eventPriority = 1;
     realData.targetMustBeAlive = true;
@@ -12609,14 +12786,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-    .Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Foretell")
-.WithText("<keyword=sap> - Gain <{a}> <card=goobers.Foretell> to your hand")
+    .Create<StatusEffectApplyXWhileHavingY>("SAP: Foretell")
+.WithText("<keyword=sap> - Before triggering, gain <{a}> <card=goobers.Foretell> to your hand")
 .WithStackable(true)
 .WithCanBeBoosted(true)
     .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
     {
-        var se = data as StatusEffectWhileActiveXBoostableScriptable;
-        se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+        var se = data as StatusEffectApplyXWhileHavingY;
+        se.targetType = "sap";
         se.effectToApply = Get<StatusEffectData>("Foretell future");
         se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
         se.eventPriority = 100;
@@ -12625,14 +12802,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Remember")
-.WithText("<keyword=ruby> - Gain <{a}> <card=goobers.Rememberance> to your hand")
+ .Create<StatusEffectApplyXWhileHavingY>("Ruby: Remember")
+.WithText("<keyword=ruby> - Before triggering, gain <{a}> <card=goobers.Rememberance> to your hand")
 .WithStackable(true)
 .WithCanBeBoosted(true)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "ruby";
      se.effectToApply = Get<StatusEffectData>("Remember Past");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -12794,14 +12971,14 @@ StatusCopy("Temporary Unmovable", "Temporary Stallefffect")                     
 })
 );
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Stall")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Stall")
 .WithText("<keyword=jade> - apply <{a}> <keyword=snow>,<keyword=frost>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Temporary Stallefffect");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12810,14 +12987,14 @@ StatusCopy("Temporary Unmovable", "Temporary Stallefffect")                     
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-  .Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Self care")
+  .Create<StatusEffectApplyXWhileHavingY>("SAP: Self care")
 .WithText("<keyword=sap> - Gain <{a}> <keyword=spice>,<keyword=shell>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
   .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
   {
-      var se = data as StatusEffectWhileActiveXBoostableScriptable;
-      se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+      var se = data as StatusEffectApplyXWhileHavingY;
+      se.targetType = "sap";
       se.effectToApply = Get<StatusEffectData>("Temporary Enhancer");
       se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
       se.eventPriority = 100;
@@ -12826,14 +13003,14 @@ StatusCopy("Temporary Unmovable", "Temporary Stallefffect")                     
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Attack!")
+ .Create<StatusEffectApplyXWhileHavingY>("Ruby: Attack!")
 .WithText("<keyword=ruby> - apply <{a}> <keyword=weakness>,<keyword=demonize>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "ruby";
      se.effectToApply = Get<StatusEffectData>("Temporary Attackefffect");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -12848,23 +13025,24 @@ StatusCopy("Temporary Unmovable", "Temporary Stallefffect")                     
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
-.Create<StatusEffectApplyXOnCardPlayedToAllyInColumn>("On turn Row Swap")
-.WithText("<keyword=goobers.swap> ally in the column")
+.Create<StatusEffectApplyXOnCardPlayed>("On turn Row Swap")
+.WithText("<keyword=goobers.swap> self")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
-    var realData = data as StatusEffectApplyXOnCardPlayedToAllyInColumn;
+    var realData = data as StatusEffectApplyXOnCardPlayed;
 
     realData.eventPriority = 1;
     realData.targetMustBeAlive = true;
     realData.effectToApply = TryGet<StatusEffectData>("Column Swap");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
 }));
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayedToAllyInColumn>("Reduce Counter Vertical")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12877,14 +13055,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Reduce Counter Vertical")
-.WithText("<keyword=jade> - Reduce <keyword=counter> by <{a}> within the column")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Reduce Counter Vertical")
+.WithText("<keyword=jade> - Count down <keyword=counter> by <{a}> within the column")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Reduce Counter Vertical");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12893,7 +13071,9 @@ new StatusEffectDataBuilder(this)
 
         //SHERA--------------------------------------------------------------------------------------------
         statusEffects.Add(
-StatusCopy("On Hit Damage Damaged Target", "Additional damage :3")                                                 //Makes a copy of the Summon Fallow effect
+StatusCopy("On Hit Damage Damaged Target", "Additional damage :3")         
+.WithStackable(false)
+.WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
     var realData = data as StatusEffectApplyXOnHit;        //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
@@ -12928,7 +13108,7 @@ StatusCopy("Temporary Unmovable", "Temporary Longshot")                         
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("MORE RUBY SHERA")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -12943,14 +13123,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: add damage")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: add damage")
 .WithText("<keyword=ruby> - <keyword=longshot>, Deal <{a}> additional damage")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Additional damage :3");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12958,13 +13138,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Longshot")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Longshot")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Temporary Longshot");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12972,14 +13152,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Reload")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Reload")
 .WithText("<keyword=jade> - Increase the effects of original <keyword=ruby> effect by <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("MORE RUBY SHERA");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -12990,14 +13170,14 @@ new StatusEffectDataBuilder(this)
         //Breesey--------------------------------------------------------------
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: knockback")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: knockback")
 .WithText("<keyword=ruby> - <keyword=knockback> 2 and x2 <keyword=frenzy>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("On Hit Push Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13005,27 +13185,28 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: knockback2")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: knockback2")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("MultiHit");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
 
+
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Wind Pull")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Wind Pull")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("On Hit Pull Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13033,27 +13214,27 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Wind Pull2")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Wind Pull2")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Temporary Longshot");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
 
 }));
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Wind Pull3")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Wind Pull3")
 .WithText("<keyword=sap> - <keyword=longshot>, <keyword=pull>, deal <{a}> additional damage")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Additional damage :3");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13062,14 +13243,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: tornado")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: tornado")
 .WithText("<keyword=jade> - <keyword=goobers.shove> and x2 <keyword=frenzy>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("On hit shove");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13077,16 +13258,17 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: tornado2")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: tornado2")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("MultiHit");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
+
 
 }));
 
@@ -13106,13 +13288,26 @@ new StatusEffectDataBuilder(this)
     realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
 }));
 
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("MultiHitter")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectInstantApplyEffect;
+
+ realData.eventPriority = 1;
+ realData.effectToApply = TryGet<StatusEffectData>("MultiHit");
+}));
+
 
         //Mimi--------------------------------------------------------------
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXPreTrigger>("Pre heal")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13127,7 +13322,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXPreTrigger>("Pre snow")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13156,13 +13351,13 @@ new StatusEffectDataBuilder(this)
            );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("JADE: Trigger ally in row")
+.Create<StatusEffectApplyXWhileHavingY>("JADE: Trigger ally in row")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Trigger When Ally In Row Attacks no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 12;
@@ -13170,14 +13365,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("JADE: Trigger ally in row2")
+.Create<StatusEffectApplyXWhileHavingY>("JADE: Trigger ally in row2")
 .WithText("<keyword=jade> - Trigger when an ally in the row attacks, before triggering restore <{a}> <keyword=health>, and apply 1 <keyword=snow> to self")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Pre heal");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 11;
@@ -13185,13 +13380,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("JADE: Trigger ally in row3")
+.Create<StatusEffectApplyXWhileHavingY>("JADE: Trigger ally in row3")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Pre snow");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 10;
@@ -13200,14 +13395,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("RUBY: Trigger Against")
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Trigger Against")
 .WithText("<keyword=ruby> - Trigger when an ally attacks, but take 1 damage")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Trigger When Ally Attacks no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 1000;
@@ -13235,7 +13430,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXEveryTurn>("Count Up everyturn")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13250,14 +13445,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("JADE: Count up")
+.Create<StatusEffectApplyXWhileHavingY>("JADE: Count up")
 .WithText("<keyword=jade> - Every turn, count up <keyword=counter> by <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Count Up everyturn");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 11;
@@ -13265,14 +13460,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Charge")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Charge")
 .WithText("<keyword=sap> - Every turn, gain 3 <keyword=energy>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Charging up");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13284,7 +13479,7 @@ new StatusEffectDataBuilder(this)
 
         statusEffects.Add(
           StatusCopy("Trigger When Self Or Ally Loses Block", "Lose block to spice")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
           .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
           {
@@ -13296,7 +13491,7 @@ new StatusEffectDataBuilder(this)
 
         statusEffects.Add(
          StatusCopy("Trigger When Self Or Ally Loses Block", "Lose block to Demon")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
          .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
          {
@@ -13309,7 +13504,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("Block self on turn")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13326,14 +13521,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("RUBY: Block self on turn")
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Block self on turn")
 .WithText("<keyword=ruby> - Gain <{a}> <keyword=block>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Block self on turn");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 11;
@@ -13342,14 +13537,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("JADE: Lose block to Spice")
+.Create<StatusEffectApplyXWhileHavingY>("JADE: Lose block to Spice")
 .WithText("<keyword=jade> - When self or ally loses <keyword=block>, apply <{a}> <keyword=spice> to allies and self.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Lose block to spice");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 11;
@@ -13357,14 +13552,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Lose block to demonize")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Lose block to demonize")
 .WithText("<keyword=sap> - When self or ally loses <keyword=block>, apply <{a}> <keyword=demonize> to enemies.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Lose block to Demon");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13375,7 +13570,9 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(
-        StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Bom before attack no text")                                                   //Makes a copy of the Summon Fallow effect
+        StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Bom before attack no text")
+        .WithStackable(false)
+.WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
        .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
        {
            ((StatusEffectApplyXWhenEnemiesAttack)data).effectToApply = TryGet<StatusEffectData>("Weakness");
@@ -13402,14 +13599,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("JADE: Energy when hit")
+.Create<StatusEffectApplyXWhileHavingY>("JADE: Energy when hit")
 .WithText("<keyword=jade> - When hit, gain {a} <keyword=energy>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Energy when hit");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 11;
@@ -13417,14 +13614,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Bom before attack")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Bom before attack")
 .WithText("<keyword=sap> - Before an enemy attacks, apply <{a}><keyword=weakness> to them.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Bom before attack no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13433,6 +13630,30 @@ new StatusEffectDataBuilder(this)
 
         //Dimona-------------------------------------------------------------------------------------------------------
 
+        statusEffects.Add(
+StatusCopy("Temporary Pigheaded", "Temporary Demonhitter")
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+((StatusEffectTemporaryTrait)data).trait = TryGet<TraitData>("Demonhitter");
+})
+);
+        
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnHit>("Demonize hitters")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectApplyXOnHit;
+
+    realData.eventPriority = 1;
+    realData.targetMustBeAlive = true;
+    realData.effectToApply = TryGet<StatusEffectData>("Demonize");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
+
+}));
 
         statusEffects.Add(
 StatusCopy("Trigger Against When Frost Applied", "Trigger Against When Demonize Applied no text")                                                   //Makes a copy of the Summon Fallow effect
@@ -13445,7 +13666,9 @@ StatusCopy("Trigger Against When Frost Applied", "Trigger Against When Demonize 
 );
 
         statusEffects.Add(
-StatusCopy("When Enemy Is Hit By Item Apply Demonize To Them", "When Enemy Is Hit By Item Apply Demonize To Them no text")                                                   //Makes a copy of the Summon Fallow effect
+StatusCopy("When Enemy Is Hit By Item Apply Demonize To Them", "When Enemy Is Hit By Item Apply Demonize To Them no text")
+.WithStackable(false)
+.WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
 {
 
@@ -13455,14 +13678,14 @@ StatusCopy("When Enemy Is Hit By Item Apply Demonize To Them", "When Enemy Is Hi
 );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("RUBY: Trigger Against When Demonize Applied")
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Trigger Against When Demonize Applied")
 .WithText("<keyword=ruby> - Trigger against anything that is hit with <keyword=demonize>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Trigger Against When Demonize Applied no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 11;
@@ -13471,17 +13694,23 @@ StatusCopy("When Enemy Is Hit By Item Apply Demonize To Them", "When Enemy Is Hi
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: When Enemy Is Hit By Item Apply Demonize To Them")
-.WithText("<keyword=sap> - When an enemy is hit with an <Item>, apply <{a}><keyword=demonize> to them")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: When Enemy Is Hit By Item Apply Demonize To Them")
+.WithText("<keyword=sap> - While active, all <Items> with 1<keyword=attack> or highter, gain <keyword=goobers.demonhit> <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
-    se.effectToApply = Get<StatusEffectData>("When Enemy Is Hit By Item Apply Demonize To Them no text");
-    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
+    se.effectToApply = Get<StatusEffectData>("Temporary Demonhitter");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Hand;
     se.eventPriority = 100;
+    se.applyConstraints = new TargetConstraint[]
+               {
+           new TargetConstraintIsItem(),new TargetConstraintAttackMoreThan(){value=0}
+
+
+                };
 
 }));
 
@@ -13527,7 +13756,7 @@ new StatusEffectDataBuilder(this)
 .SubscribeToAfterAllBuildEvent(data =>
 {
     var realData = data as StatusEffectInstantAddRandomCharmToInventory;
-
+    
     realData.eventPriority = 1;
     realData.customList = [TryGet<CardUpgradeData>("CardUpgradePig"), TryGet<CardUpgradeData>("CardUpgradeFrosthand"), TryGet<CardUpgradeData>("CardUpgradeHeart"), TryGet<CardUpgradeData>("CardUpgradeHeartmist"),
 TryGet<CardUpgradeData>("CardUpgradeSnowball"),TryGet<CardUpgradeData>("CardUpgradeTeethWhenHit"),TryGet<CardUpgradeData>("CardUpgradeInk"),TryGet<CardUpgradeData>("CardUpgradeShellOnKill"),
@@ -13588,14 +13817,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Random Def Charm")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Random Def Charm")
 .WithText("<keyword=sap> - After winning the battle, gain 1 <Defensive> charm to your inventory.")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Random Def Charm");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13604,14 +13833,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Random Attack Charm")
+ .Create<StatusEffectApplyXWhileHavingY>("Ruby: Random Attack Charm")
 .WithText("<keyword=ruby> - After winning the battle, gain 1 <Offensive> charm to your inventory.")
  .WithStackable(false)
  .WithCanBeBoosted(false)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "ruby";
      se.effectToApply = Get<StatusEffectData>("Random Attack Charm");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -13619,14 +13848,14 @@ new StatusEffectDataBuilder(this)
  }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Random Support Charm")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Random Support Charm")
 .WithText("<keyword=jade> - After winning the battle, gain 1 <Supportive> charm to your inventory.")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Random Support Charm");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13639,7 +13868,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("Increase Counter NOW")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13655,7 +13884,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("Gain frenzy for sap")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13693,14 +13922,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Double Attack")
+ .Create<StatusEffectApplyXWhileHavingY>("Ruby: Double Attack")
 .WithText("<keyword=ruby> - Before triggering, gain <keyword=spice> equal to current <keyword=attack>.")
  .WithStackable(false)
  .WithCanBeBoosted(false)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "ruby";
      se.effectToApply = Get<StatusEffectData>("Whileact doub");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -13708,14 +13937,14 @@ new StatusEffectDataBuilder(this)
  }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Gain frenzy for sap")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Gain frenzy for sap")
 .WithText("<keyword=sap> - Gain <x{a}> <keyword=frenzy>,")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type, };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Gain frenzy for sap");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13723,14 +13952,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Increase Counter NOW")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Increase Counter NOW")
 .WithText("and increase max <keyword=counter> by <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Increase Counter NOW");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13742,7 +13971,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayedToAllyInColumn>("Heal Column")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13755,7 +13984,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayed>("Heal row jade")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13768,27 +13997,27 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Heal row jade")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Heal row jade")
 .WithText("<keyword=jade> - Restore <{a}> <keyword=health> and cleanse allies in the row, and column.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Heal Column");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
 
 }));
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Heal row jade2")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Heal row jade2")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Heal row jade");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13798,7 +14027,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayedToAllyInColumn>("Reduce Column")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13810,14 +14039,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Reduce Column")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Reduce Column")
 .WithText("<keyword=sap> - Count down <keyword=counter> by <{a}> to ally within the column")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type, };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Reduce Column");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13848,14 +14077,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: When Shroom HP")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: When Shroom HP")
 .WithText("<keyword=jade> - Whenever anything is <keyword=shroom>'d, gain equal max <keyword=health>.")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("When Shroom Applied To Anything Gain Equal Health To Self");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13865,14 +14094,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: When Shroom ATK")
+ .Create<StatusEffectApplyXWhileHavingY>("Ruby: When Shroom ATK")
 .WithText("<keyword=ruby> - Whenever anything is <keyword=shroom>'d, gain equal <keyword=attack>.")
  .WithStackable(false)
  .WithCanBeBoosted(false)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "ruby";
      se.effectToApply = Get<StatusEffectData>("When Shroom Applied To Anything Gain Equal Attack To Self");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -13886,7 +14115,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXWhenHit>("When hit, shroom attacker no text")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13916,14 +14145,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: When hit, shroom attacker")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: When hit, shroom attacker")
 .WithText("<keyword=sap> - When Hit, apply <{a}> <keyword=shroom> to the attacker")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("When hit, shroom attacker no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13931,14 +14160,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: plus effects")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: plus effects")
 .WithText("<keyword=jade> - Increase own effects by {a} when hit.")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("plus effects");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -13969,7 +14198,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("On turn Increase mac counter")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13985,7 +14214,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXWhenRedrawHit>("On Bel Hit Shell")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -13999,13 +14228,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: On turn full charge")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: On turn full charge")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("On turn full charge");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14013,14 +14242,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: On turn counter")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: On turn counter")
 .WithText("<keyword=jade> - <keyword=goobers.passifive>, Instantly recharge the bell, increase max <keyword=counter> <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("On turn Increase mac counter");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14028,13 +14257,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Passive")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Passive")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Temporary Passive");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14042,14 +14271,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: redraw shell")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: redraw shell")
 .WithText("<keyword=sap> - When redraw bell is hit, gain <{a}> <keyword=shell>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("On Bel Hit Shell");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14060,14 +14289,14 @@ new StatusEffectDataBuilder(this)
         //Lea -------------------------------------------------------------------------------------------------------------
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Hit All Jolt")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Hit All Jolt")
 .WithText("<keyword=ruby> - Hit all <keyword=jolt>'d enemies.")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Hit All Jolt");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14076,14 +14305,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Charged Trigger")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Charged Trigger")
 .WithText("<keyword=sap> - <keyword=goobers.charged> Trigger")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Charged Trigger");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14116,14 +14345,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Equal Shell When HitS")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Equal Shell When HitS")
 .WithText("<keyword=sap> - Apply <keyword=shell> equal to damage taken to ally behind")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Equal Shell When HitS");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14131,14 +14360,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Multihit shell")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Multihit shell")
 .WithText("<keyword=jade> - While active, allies with <keyword=shell> gain <x{a}> <keyword=frenzy>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("MultiHit");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
     se.eventPriority = 100;
@@ -14167,7 +14396,7 @@ StatusCopy("Temporary Pigheaded", "Temporary Shellyc")
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXWhenHit>("Shell to attacker now")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -14183,14 +14412,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: ShellyC TEMP")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: ShellyC TEMP")
 .WithText("<keyword=jade> - While active, enemies and allies  gain <keyword=goobers.shellyc> <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Temporary Shellyc");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Enemies | ApplyToFlags.Allies;
     se.eventPriority = 100;
@@ -14209,19 +14438,19 @@ new StatusEffectDataBuilder(this)
     realData.enemies = true;
     realData.allies = false;
     realData.self = false;
-    realData.whenAllLost = true;
+    realData.whenAllLost = false;
 }));
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: SHELL!")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: SHELL!")
 .WithText("<keyword=ruby> - Trigger when enemy loses <keyword=shell>.")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Lose all shell");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14231,13 +14460,13 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Foxy")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Foxy")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("MultiHit");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14245,14 +14474,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Foxy2")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Foxy2")
 .WithText("<keyword=ruby> - 1x<keyword=frenzy>, apply <{a}><keyword=weakness>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("A1");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14260,13 +14489,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Foxy")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Foxy")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("MultiHit");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14274,14 +14503,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Foxy2")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Foxy2")
 .WithText("<keyword=jade> - 1x<keyword=frenzy>, apply <{a}><keyword=snow>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("S2");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14290,13 +14519,13 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Foxy")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Foxy")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("MultiHit");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14305,14 +14534,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Foxy2")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Foxy2")
 .WithText("<keyword=sap> - 1x<keyword=frenzy>, apply <{a}><keyword=shroom>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("A3");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14325,7 +14554,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("All energies")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -14341,7 +14570,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnTurn>("All burning")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -14355,14 +14584,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Zula")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Zula")
 .WithText("<keyword=ruby> - Apply <{a}> <keyword=overload> to enemies in the row.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("All burning");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14371,14 +14600,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Zula")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Zula")
 .WithText("<keyword=sap> - Apply <{a}> <keyword=energy> to all allies.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("All energies");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14525,14 +14754,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-    .Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Sunflower Spell")
+    .Create<StatusEffectApplyXWhileHavingY>("SAP: Sunflower Spell")
 .WithText("<keyword=sap> - Gain <card=goobers.Sunflower> to your hand")
     .WithStackable(false)
     .WithCanBeBoosted(false)
     .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
     {
-        var se = data as StatusEffectWhileActiveXBoostableScriptable;
-        se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+        var se = data as StatusEffectApplyXWhileHavingY;
+        se.targetType = "sap";
         se.effectToApply = Get<StatusEffectData>("Sunflower Spell now");
         se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
         se.eventPriority = 100;
@@ -14541,14 +14770,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
- .Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Nightshade Spell")
-.WithText("<keyword=ruby> - Gain <card=goobers.Nightshade> to your hand")
+ .Create<StatusEffectApplyXWhileHavingY>("Ruby: Nightshade Spell")
+.WithText("<keyword=ruby> - Gain <card=goobers.Nightshade2> to your hand")
  .WithStackable(false)
  .WithCanBeBoosted(false)
  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
  {
-     var se = data as StatusEffectWhileActiveXBoostableScriptable;
-     se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+     var se = data as StatusEffectApplyXWhileHavingY;
+     se.targetType = "ruby";
      se.effectToApply = Get<StatusEffectData>("Nightshade Spell now");
      se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
      se.eventPriority = 100;
@@ -14556,14 +14785,14 @@ new StatusEffectDataBuilder(this)
  }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Rose Spell")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Rose Spell")
 .WithText("<keyword=jade> - Gain <card=goobers.Roses> to your hand")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Rose Spell now");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14602,14 +14831,14 @@ new StatusEffectDataBuilder(this)
 ));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Randomize Target")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Randomize Target")
 .WithText("<keyword=ruby> - Change target's <keyword=attack> randomly from 1-8")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Randomize Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14793,14 +15022,14 @@ new StatusEffectDataBuilder(this)
 ));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Randomize Counter Targe")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Randomize Counter Targe")
 .WithText("<keyword=sap> - Change target's <keyword=counter> randomly from 1-8")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Randomize Counter Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14818,14 +15047,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Trigger Hit")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Trigger Hit")
 .WithText("<keyword=ruby> - Trigger when hit")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("When Hit Trigger To Self ntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14833,14 +15062,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: When Hit Trigger To Self ntext allies")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: When Hit Trigger To Self ntext allies")
 .WithText("<keyword=sap> - While active, allies gain the properties of <Trigger when hit> but are infliced with 100 <keyword=demonize>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("When Hit Trigger To Self ntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
     se.eventPriority = 100;
@@ -14848,13 +15077,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: When Hit Trigger To Self ntext allies2")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: When Hit Trigger To Self ntext allies2")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Demonize");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
     se.eventPriority = 100;
@@ -14913,14 +15142,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Plus ATK on win")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Plus ATK on win")
 .WithText("<keyword=ruby> - After winning, increase own <keyword=attack> by 4 permanently")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Plus ATK on win4");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14928,14 +15157,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Plus ATK on win2")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Plus ATK on win2")
 .WithText("<keyword=jade> - After winning, increase allies <keyword=attack> by 2 permanently")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Plus ATK on win2");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14960,6 +15189,7 @@ new StatusEffectDataBuilder(this)
     var script = ScriptableObject.CreateInstance<ScriptableFixedAmount>();
     script.amount = 2;
     ((StatusEffectApplyX)data).scriptableAmount = script;
+   
 
 })
 );
@@ -14978,19 +15208,28 @@ new StatusEffectDataBuilder(this)
     var script = ScriptableObject.CreateInstance<ScriptableFixedAmount>();
     script.amount = 1;
     ((StatusEffectApplyX)data).scriptableAmount = script;
+    realData.applyConstraints = new TargetConstraint[]
+              {
+        new TargetConstraintCounterMoreThan()
+        {
+            value = 3
+        }
+
+              };
+
 
 })
 );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Plus ATK on counter-")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Plus ATK on counter-")
 .WithText("<keyword=jade> - After winning, reduce own <keyword=counter> by 2 permanently")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Plus ATK on counter-");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -14999,14 +15238,14 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Plus ATK on counter- Allies")
-.WithText("<keyword=ruby> - After winning, reduce the max <keyword=counter> of the ally ahead by 1 permanently")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Plus ATK on counter- Allies")
+.WithText("<keyword=ruby> - After winning, reduce the base max <keyword=counter> of the ally ahead by 1 permanently, this effect does not work if the card's base max <keyword=counter> is 3 or lower.")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Plus ATK on counter- Allies");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15072,14 +15311,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Heal ntext")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Heal ntext")
 .WithText("<keyword=sap> - Restore <{a}> <keyword=health>, and apply 4 <keyword=snow> to self")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Heal ntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15087,13 +15326,13 @@ new StatusEffectDataBuilder(this)
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Heal ntext2")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Heal ntext2")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Snow ntext4");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15117,19 +15356,20 @@ new StatusEffectDataBuilder(this)
      .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
      {
          ((StatusEffectData)data).textKey = null;
+         ((StatusEffectTriggerWhenStatusApplied)data).selfFire = false;
 
      })
      );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: On Turn Apply Snow To Enemiesntextscript")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: On Turn Apply Snow To Enemiesntextscript")
 .WithText("<keyword=sap> - Whenever anything is <keyword=frost>'d, gain equal <keyword=attack>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("On Turn Apply Snow To Enemiesntextscript");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15138,14 +15378,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Trigger Against When Frost Appliedntext")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Trigger Against When Frost Appliedntext")
 .WithText("<keyword=ruby> - Trigger against anything that is hit with <keyword=frost>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Trigger Against When Frost Appliedntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15157,6 +15397,8 @@ new StatusEffectDataBuilder(this)
 
         statusEffects.Add(
      StatusCopy("On Turn Apply Snow To Enemies", "On Turn Apply Frosty To Enemies no text")
+     .WithStackable(false)
+.WithCanBeBoosted(false)
 
      .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
      {
@@ -15167,6 +15409,8 @@ new StatusEffectDataBuilder(this)
      );
         statusEffects.Add(
    StatusCopy("On Turn Apply Snow To Enemies", "On Turn Apply Frost To Enemies no text")
+   .WithStackable(false)
+.WithCanBeBoosted(false)
 
    .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
    {
@@ -15178,14 +15422,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Frosty")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Frosty")
 .WithText("<keyword=sap> - Apply <{a}><keyword=frost> to all enemies")
 .WithStackable(true)
-.WithCanBeBoosted(false)
+.WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("On Turn Apply Frosty To Enemies no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15195,14 +15439,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Snowy")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Snowy")
 .WithText("<keyword=jade> - Apply <{a}><keyword=snow> to all enemies")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("On Turn Apply Frost To Enemies no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15216,7 +15460,7 @@ new StatusEffectDataBuilder(this)
 
         statusEffects.Add(
 StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Frost before attack no text")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
 {
@@ -15229,7 +15473,7 @@ StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Frost before attac
 
         statusEffects.Add(
 StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Jolt before attack no text")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
 {
@@ -15243,14 +15487,14 @@ StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Jolt before attack
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Totem block")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Totem block")
 .WithText("<keyword=sap> - Before an enemy attacks, apply <{a}><keyword=block> to a random ally and enemy.")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("Frost before attack no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15258,14 +15502,14 @@ StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Jolt before attack
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Jolt Totem")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Jolt Totem")
 .WithText("<keyword=ruby> - Before an enemy attacks, apply <{a}><keyword=jolt> to them")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Jolt before attack no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15277,7 +15521,7 @@ StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Jolt before attack
 
         statusEffects.Add(
 StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Shroom before attack no text")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
 {
@@ -15289,7 +15533,7 @@ StatusCopy("When Enemies Attack Apply Demonize To Attacker", "Shroom before atta
 
         statusEffects.Add(
 StatusCopy("When Anyone Takes Shroom Damage Apply Attack To Self", "When Anyone Takes Shroom Damage Apply Attack To Self NTEXT")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
 {
@@ -15299,14 +15543,14 @@ StatusCopy("When Anyone Takes Shroom Damage Apply Attack To Self", "When Anyone 
 );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Shroom")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Shroom")
 .WithText("<keyword=jade> - Before an enemy attacks, apply <{a}><keyword=shroom> to them")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Shroom before attack no text");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15315,14 +15559,14 @@ StatusCopy("When Anyone Takes Shroom Damage Apply Attack To Self", "When Anyone 
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: SHROOM ATTACK")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: SHROOM ATTACK")
 .WithText("<keyword=ruby> - Whenever anything takes damage from <keyword=shroom>, gain <+{a}><keyword=attack>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("When Anyone Takes Shroom Damage Apply Attack To Self NTEXT");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -15334,14 +15578,14 @@ StatusCopy("When Anyone Takes Shroom Damage Apply Attack To Self", "When Anyone 
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: RUBY")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: RUBY")
 .WithText("<keyword=jade> - While active, ally ahead gains <keyword=ruby>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("RUBY");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
     se.eventPriority = 100;
@@ -15350,14 +15594,14 @@ StatusCopy("When Anyone Takes Shroom Damage Apply Attack To Self", "When Anyone 
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: SAP")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: SAP")
 .WithText("<keyword=ruby> - While active, ally ahead gains <keyword=sap>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("SAP");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
     se.eventPriority = 100;
@@ -15367,14 +15611,14 @@ StatusCopy("When Anyone Takes Shroom Damage Apply Attack To Self", "When Anyone 
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: JADE")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: JADE")
 .WithText("<keyword=sap> - While active, ally ahead gains <keyword=jade>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("JADE");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
     se.eventPriority = 100;
@@ -15382,6 +15626,20 @@ StatusCopy("When Anyone Takes Shroom Damage Apply Attack To Self", "When Anyone 
 }));
 
         //Tano Shi
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantCopyEffectsntext>("Copyeffectnotext")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectInstantCopyEffectsntext;
+    se.replaceAllEffects = false;
+
+})
+);
+
 
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
@@ -15395,7 +15653,7 @@ new StatusEffectDataBuilder(this)
 
     realData.eventPriority = 1;
     realData.targetMustBeAlive = true;
-    realData.effectToApply = TryGet<StatusEffectData>("Copy Effects");
+    realData.effectToApply = TryGet<StatusEffectData>("Copyeffectnotext");
     realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
 
 
@@ -15413,7 +15671,7 @@ new StatusEffectDataBuilder(this)
 
     realData.eventPriority = 1;
     realData.targetMustBeAlive = true;
-    realData.effectToApply = TryGet<StatusEffectData>("Copy Effects");
+    realData.effectToApply = TryGet<StatusEffectData>("Copyeffectnotext");
     realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyBehind;
 
 
@@ -15643,7 +15901,7 @@ new StatusEffectDataBuilder(this)
 StatusCopy("Summon Junk", "Summon Nightshade")
 .SubscribeToAfterAllBuildEvent(data =>
 {
-    (data as StatusEffectSummon).summonCard = TryGet<CardData>("Nightshade");
+    (data as StatusEffectSummon).summonCard = TryGet<CardData>("Nightshade2");
 })
 );
 
@@ -15663,7 +15921,7 @@ StatusCopy("Summon Junk", "Summon Nightshade")
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayed>("Nightshade to hand")
-.WithText("Gain <card=goobers.Nightshade> to your hand")
+.WithText("Gain <card=goobers.Nightshade2> to your hand")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
@@ -15860,7 +16118,7 @@ new StatusEffectDataBuilder(this)
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnCardPlayed>("jolt random enemy")
-.WithText("Apply <{a}> <keyword=jolt> to a random ally")
+.WithText("Apply <{a}> <keyword=jolt> to a random enemy")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(data =>
@@ -16038,14 +16296,14 @@ StatusCopy("When Enemy (Shroomed) Is Killed Apply Their Shroom To RandomEnemy", 
 );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: When Enemyt Killed but nom ree")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: When Enemyt Killed but nom ree")
 .WithText("<keyword=ruby> - When a <keyword=weakness>'d enemy dies, apply their <keyword=weakness> to a random enemy")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("When Enemyt Killed but nom ree");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16054,14 +16312,14 @@ StatusCopy("When Enemy (Shroomed) Is Killed Apply Their Shroom To RandomEnemy", 
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Temporary Energyorganics")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Temporary Energyorganics")
 .WithText("<keyword=ruby> - While active, allies gain <keyword=goobers.energyconvert>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("Temporary Energyorganics");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
     se.eventPriority = 100;
@@ -16083,14 +16341,14 @@ StatusCopy("Temporary Pigheaded", "Temporary Energyshellic")
 );
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Temporary energyshellic")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Temporary energyshellic")
 .WithText("<keyword=jade> - While active, allies gain <keyword=goobers.energyshellic>")
 .WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Temporary Energyshellic");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
     se.eventPriority = 100;
@@ -16101,7 +16359,7 @@ StatusCopy("Temporary Pigheaded", "Temporary Energyshellic")
 
         statusEffects.Add(
 StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Heal To Target ntext")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
@@ -16112,7 +16370,7 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Heal To Target n
 
         statusEffects.Add(
 StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Increase Attack To Target")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
@@ -16124,7 +16382,7 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Increase Attack 
 
         statusEffects.Add(
    StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Reduce Counter To Target")
-   .WithStackable(true)
+   .WithStackable(false)
 .WithCanBeBoosted(false)
    .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
    {
@@ -16162,14 +16420,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Jade: Miststation")
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Miststation")
 .WithText("<keyword=jade> Restore their <keyword=health> by <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("When Ally is Hit Heal To Target ntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16178,14 +16436,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("SAP: Miststation")
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Miststation")
 .WithText("<keyword=sap> - Count down their <keyword=counter> by <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("When Ally is Hit Reduce Counter To Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16194,14 +16452,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Ruby: Miststation")
+.Create<StatusEffectApplyXWhileHavingY>("Ruby: Miststation")
 .WithText("<keyword=ruby> - Increase their <keyword=attack> by <{a}>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("When Ally is Hit Increase Attack To Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16210,14 +16468,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("LOSEY")
+.Create<StatusEffectApplyXWhileHavingY>("LOSEY")
 .WithText("When any of these effects takes place, lose all <keyword=energy>")
 .WithStackable(true)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("When Ally is Hit Lose Energy To Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16226,14 +16484,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("LOSEY2")
+.Create<StatusEffectApplyXWhileHavingY>("LOSEY2")
 .WithText("When an ally is hit,")
 .WithStackable(true)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("When Ally is Hit Lose Energy To Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16242,13 +16500,13 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("LOSEY3")
+.Create<StatusEffectApplyXWhileHavingY>("LOSEY3")
 .WithStackable(true)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("When Ally is Hit Lose Energy To Target");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16260,7 +16518,7 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 
         statusEffects.Add(
    StatusCopy("On Turn Drop Gold", "On Turn Drop Gold ntext")
-   .WithStackable(true)
+   .WithStackable(false)
 .WithCanBeBoosted(false)
    .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
    {
@@ -16271,14 +16529,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Blingblingbank")
+.Create<StatusEffectApplyXWhileHavingY>("Blingblingbank")
 .WithText("<keyword=jade> - Gain <{a}><keyword=blings>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("On Turn Drop Gold ntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16287,14 +16545,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Blingblingbank2")
+.Create<StatusEffectApplyXWhileHavingY>("Blingblingbank2")
 .WithText("<keyword=sap> - Gain <{a}><keyword=blings>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("SAP").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "sap";
     se.effectToApply = Get<StatusEffectData>("On Turn Drop Gold ntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16303,14 +16561,14 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
 }));
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Blingblingbank3")
+.Create<StatusEffectApplyXWhileHavingY>("Blingblingbank3")
 .WithText("<keyword=ruby> - Gain <{a}><keyword=blings>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("RUBY").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
     se.effectToApply = Get<StatusEffectData>("On Turn Drop Gold ntext");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16321,7 +16579,7 @@ StatusCopy("When Ally is Hit Heal To Target", "When Ally is Hit Lose Energy To T
         statusEffects.Add(
 new StatusEffectDataBuilder(this)
 .Create<StatusEffectApplyXOnKill>("Gain scrap on kill")
-.WithStackable(true)
+.WithStackable(false)
 .WithCanBeBoosted(false)
 .SubscribeToAfterAllBuildEvent(data =>
 {
@@ -16335,14 +16593,14 @@ new StatusEffectDataBuilder(this)
 
 
         statusEffects.Add(new StatusEffectDataBuilder(this)
-.Create<StatusEffectWhileActiveXBoostableScriptable>("Chompy time")
+.Create<StatusEffectApplyXWhileHavingY>("Chompy time")
 .WithText("<keyword=jade> - On kill, gain <{a}> <keyword=scrap>")
 .WithStackable(true)
 .WithCanBeBoosted(true)
 .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
 {
-    var se = data as StatusEffectWhileActiveXBoostableScriptable;
-    se.scriptableAmount = new ScriptableCurrentStatus() { statusType = Get<StatusEffectData>("JADE").type };
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
     se.effectToApply = Get<StatusEffectData>("Gain scrap on kill");
     se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
     se.eventPriority = 100;
@@ -16384,14 +16642,1495 @@ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
 }));
 
 
-        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
-        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
-        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
-        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
-        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
-        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
-        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+        statusEffects.Add(
+      StatusCopy("On Card Played Apply Shell To Allies", "On Card Played Apply Shell To Allies1")
+     .WithStackable(true)
+     .WithCanBeBoosted(true)//Since this effect is on Shade Serpent, we modify the description shown.
+                                                  //Makes a copy of the Summon Fallow effect
 
+      //If that fails, then it uses no GUID-prefixing.
+      );
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("NEW SHELLER")
+.WithText("Apply <{a}><keyword=shell> to all allies")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXOnCardPlayed;
+
+realData.eventPriority = 1;
+realData.effectToApply = TryGet<StatusEffectData>("Shell");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+
+}));
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantTutor>("Kase Special")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantTutor;
+
+
+realData.eventPriority = 5;
+realData.source = StatusEffectInstantTutor.CardSource.Custom;
+realData.title = LocalizationHelper.GetCollection("UI Text", SystemLanguage.English).GetString("Goobers.TutorACard");
+realData.amount = 3;
+realData.summonCopy = TryGet<StatusEffectInstantSummon>("Instant Summon Junk In Hand");
+realData.customCardList = ["Berry", "Sugary", "Odd"];
+realData.addToDeck = true;
+
+})
+);
+
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("Kase SpecialE")
+.WithText("<keyword=goobers.specialty>")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var realData = data as StatusEffectApplyXOnCardPlayed;
+    realData.effectToApply = TryGet<StatusEffectData>("Kase Special");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    realData.eventPriority = 3;
+
+
+}));
+
+        //MIHIYA----------------------------------------------------------
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("Instahide")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantApplyEffect;
+
+realData.eventPriority = 1;
+realData.effectToApply = TryGet<StatusEffectData>("Hidden");
+}));
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("Hazeinsta")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectInstantApplyEffect;
+
+ realData.eventPriority = 1;
+ realData.effectToApply = TryGet<StatusEffectData>("Haze");
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantMultiple>("Hazehide")
+.WithCanBeBoosted(false)
+.WithTextInsert("=")
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectInstantMultiple;
+
+    realData.effects = new StatusEffectInstant[]
+    {
+     TryGet<StatusEffectInstant>("Instahide"),
+     TryGet<StatusEffectInstant>("Hazeinsta")
+    };
+}
+
+));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("On turn haze hide ally")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var realData = data as StatusEffectApplyXOnCardPlayed;
+ realData.effectToApply = TryGet<StatusEffectData>("Hidden");
+ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyBehind;
+ realData.eventPriority = 3;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("On turn Enemy in front")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+  var realData = data as StatusEffectApplyXOnCardPlayed;
+  realData.effectToApply = TryGet<StatusEffectData>("Hazehide");
+  realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.FrontEnemy;
+  realData.eventPriority = 3;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Hide ally")
+.WithText("<keyword=sap> - Apply {a} <keyword=hidew> to ally behind")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "sap";
+se.effectToApply = Get<StatusEffectData>("On turn haze hide ally");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Hide enemy front")
+.WithText("<keyword=ruby> - Apply <{a}> <keyword=hidew> and <keyword=haze> to enemy in front")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "ruby";
+se.effectToApply = Get<StatusEffectData>("On turn Enemy in front");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        //Paseereree-----------------------------------------------------------------------------------------------------
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("Hide self")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var realData = data as StatusEffectApplyXOnCardPlayed;
+ realData.effectToApply = TryGet<StatusEffectData>("Hidden");
+ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+ realData.eventPriority = 3;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("Block ally")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var realData = data as StatusEffectApplyXOnCardPlayed;
+realData.effectToApply = TryGet<StatusEffectData>("Block");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
+realData.eventPriority = 3;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Hide self")
+.WithText("<keyword=jade> - Gain <{a}> <keyword=hidew>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var se = data as StatusEffectApplyXWhileHavingY;
+ se.targetType = "jade";
+ se.effectToApply = Get<StatusEffectData>("Hide self");
+ se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+ se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Block ally")
+.WithText("<keyword=sap> - Apply <{a}> <keyword=block> to ally ahead")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "sap";
+se.effectToApply = Get<StatusEffectData>("Block ally");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+
+        // Permia---------------------------------------------------------------------------------------------------------------
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenYAppliedTo>("Burnage When Shroom")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var realData = data as StatusEffectApplyXWhenYAppliedTo;
+realData.effectToApply = TryGet<StatusEffectData>("Burnage");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomEnemy;
+realData.eventPriority = 3;
+    realData.whenAppliedToFlags= StatusEffectApplyX.ApplyToFlags.Enemies;
+    realData.whenAppliedTypes = new string[1] { "shroom" };
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Burn Splode")
+.WithText("<keyword=ruby> - When an enemy is applied with <keyword=shroom> apply <{a}> <keyword=burnage> to a random enemy in the row")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var se = data as StatusEffectApplyXWhileHavingY;
+ se.targetType = "ruby";
+ se.effectToApply = Get<StatusEffectData>("Burnage When Shroom");
+ se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+ se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(
+     new StatusEffectDataBuilder(this)
+                 .Create<StatusEffectApplyXWhenAnyoneTakesDamage>("Burning+shroom")
+                 .WithStackable(false)
+                 .WithCanBeBoosted(false)
+                 .SubscribeToAfterAllBuildEvent(data =>
+                 {
+                     var realData = data as StatusEffectApplyXWhenAnyoneTakesDamage;
+
+                     realData.eventPriority = 9999;
+                     realData.targetMustBeAlive = false;
+                     realData.effectToApply = TryGet<StatusEffectData>("Shroom");
+                     realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomEnemy;
+                     realData.targetDamageType = "fire";
+
+
+
+                 }));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Burn Splode")
+.WithText("<keyword=jade> - When enemy takes <Fire> damage apply <{a}> <keyword=shroom> to enemy in front. ")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var se = data as StatusEffectApplyXWhileHavingY;
+ se.targetType = "jade";
+ se.effectToApply = Get<StatusEffectData>("Burning+shroom");
+ se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+ se.eventPriority = 100;
+
+
+}));
+
+        //REANESS--------------------------------------------------------------------------------------------------------------------
+
+
+        statusEffects.Add(
+StatusCopy("When Enemy Is Hit By Item Apply Demonize To Them", "When Enemy Is Hit By Item Apply Overload To Them no text")
+.WithStackable(false)
+.WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
+{
+
+    ((StatusEffectData)data).textKey = null; //Alternatively, I could've put TryGet<CardData>("mhcdc9.wildfrost.tutorial.shadeSnake") or TryGet<CardData>(Extensions.PrefixGUID("shadeSnake",this)) or the Get variants too
+
+    ((StatusEffectApplyXWhenUnitIsHit)data).effectToApply = TryGet<StatusEffectData>("Overload");
+
+    //This is because TryGet will try to prefix the name with your GUID. 
+})                                                                          //If that fails, then it uses no GUID-prefixing.
+);
+
+        statusEffects.Add(
+StatusCopy("When Enemy Is Hit By Item Apply Demonize To Them", "When Enemy Is Hit By Item Apply Burnage To Them no text")
+.WithStackable(false)
+.WithCanBeBoosted(false)//Makes a copy of the Summon Fallow effect
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)          //Changes the summoned card to Shade Snake, but not immediately. Once Shade Snake is properly loaded, the delegate is called.
+{
+
+    ((StatusEffectData)data).textKey = null; //Alternatively, I could've put TryGet<CardData>("mhcdc9.wildfrost.tutorial.shadeSnake") or TryGet<CardData>(Extensions.PrefixGUID("shadeSnake",this)) or the Get variants too
+
+    ((StatusEffectApplyXWhenUnitIsHit)data).effectToApply = TryGet<StatusEffectData>("Burnage");
+
+    //This is because TryGet will try to prefix the name with your GUID. 
+})                                                                          //If that fails, then it uses no GUID-prefixing.
+);
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Eraness Burnage")
+.WithText("<keyword=ruby> - When an enemy is hit with an <Item>, apply <{a}><keyword=burnage> to them")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
+    se.effectToApply = Get<StatusEffectData>("When Enemy Is Hit By Item Apply Burnage To Them no text");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Eraness Overload")
+.WithText("<keyword=sap> - When an enemy is hit with an <Item>, apply {a}<keyword=overload> to them")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+  var se = data as StatusEffectApplyXWhileHavingY;
+  se.targetType = "sap";
+  se.effectToApply = Get<StatusEffectData>("When Enemy Is Hit By Item Apply Overload To Them no text");
+  se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+  se.eventPriority = 100;
+
+
+}));
+
+        //Amber------------------------------------------------------------------------------------------
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+         .Create<StatusEffectApplyXWhenAnyoneTakesDamage>("Fire to attack")
+         .WithStackable(false)
+         .WithCanBeBoosted(false)
+         .SubscribeToAfterAllBuildEvent(data =>
+         {
+             var realData = data as StatusEffectApplyXWhenAnyoneTakesDamage;
+
+             realData.eventPriority = 9999;
+             realData.targetMustBeAlive = false;
+             realData.effectToApply = TryGet<StatusEffectData>("Shell");
+             realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+             realData.targetDamageType = "fire";
+
+
+
+         }));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+      .Create<StatusEffectApplyXWhenAnyoneTakesDamage>("Inferno to shell")
+      .WithStackable(false)
+      .WithCanBeBoosted(false)
+      .SubscribeToAfterAllBuildEvent(data =>
+      {
+          var realData = data as StatusEffectApplyXWhenAnyoneTakesDamage;
+
+          realData.eventPriority = 9999;
+          realData.targetMustBeAlive = false;
+          realData.effectToApply = TryGet<StatusEffectData>("Spice");
+          realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+          realData.targetDamageType = "inferno";
+
+
+
+      }));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: fire to attack")
+.WithText("<keyword=ruby> - When enemy takes <Fire> damage, gain <{a}><keyword=shell>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "ruby";
+se.effectToApply = Get<StatusEffectData>("Fire to attack");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("JADE: inferno to shell")
+.WithText("<keyword=jade> - When enemy takes <Inferno> damage, gain <{a}><keyword=spice>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "jade";
+    se.effectToApply = Get<StatusEffectData>("Inferno to shell");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    se.eventPriority = 100;
+
+
+}));
+        //Forgo---------------------------------------------------------------------------------------------------------
+
+    
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenItemsAttack>("When Enemy Is Hit By Item Item ATK2")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var se = data as StatusEffectApplyXWhenItemsAttack;
+ se.effectToApply = Get<StatusEffectData>("Increase Attack");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Attacker;
+ se.eventPriority = 100;
+  
+    se.applyConstraints = new TargetConstraint[]
+   {
+        new TargetConstraintIsItem()
+      
+};
+   
+
+}));
+        
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnHit>("Snow hitters")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+   var realData = data as StatusEffectApplyXOnHit;
+
+   realData.eventPriority = 1;
+   realData.targetMustBeAlive = true;
+   realData.effectToApply = TryGet<StatusEffectData>("Snow");
+   realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
+
+}));
+
+        statusEffects.Add(
+StatusCopy("Temporary Pigheaded", "Temporary Snowhitter")
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+  ((StatusEffectTemporaryTrait)data).trait = TryGet<TraitData>("Snowhitter");
+})
+);
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenItemsAttack>("When Enemy Is Hit By Item Item Snow")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhenItemsAttack;
+    se.effectToApply = Get<StatusEffectData>("Temporary Snowhitter");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Attacker;
+    se.eventPriority = 100;
+
+    se.applyConstraints = new TargetConstraint[]
+   {
+        new TargetConstraintIsItem()
+
+};
+
+
+}));
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("Burnage hitters")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectApplyXOnCardPlayed;
+
+    realData.eventPriority = 1;
+    realData.targetMustBeAlive = true;
+    realData.effectToApply = TryGet<StatusEffectData>("Burnage");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
+
+}));
+
+        statusEffects.Add(
+StatusCopy("Temporary Pigheaded", "Temporary BurnageHitter")
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    ((StatusEffectTemporaryTrait)data).trait = TryGet<TraitData>("Burnagehitter");
+})
+);
+
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenItemsAttack>("When Enemy Is Hit By Item Item Burnage")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+  var se = data as StatusEffectApplyXWhenItemsAttack;
+  se.effectToApply = Get<StatusEffectData>("Temporary BurnageHitter");
+  se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Attacker;
+  se.eventPriority = 100;
+   
+
+  se.applyConstraints = new TargetConstraint[]
+ {
+        new TargetConstraintIsItem()
+
+};
+
+
+}));
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectEXP>("DESCFORGO")
+.WithText("Before an <Item> attacks,")
+);
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Forgo")
+.WithText("<keyword=sap> - <Item> gains <+{a}><keyword=attack>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var se = data as StatusEffectApplyXWhileHavingY;
+ se.targetType = "sap";
+ se.effectToApply = Get<StatusEffectData>("When Enemy Is Hit By Item Item ATK2");
+ se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+ se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("JADE: Forgo")
+.WithText("<keyword=jade> - <Item> gains <{a}> <keyword=goobers.snowhit>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "jade";
+se.effectToApply = Get<StatusEffectData>("When Enemy Is Hit By Item Item Snow");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Forgo")
+.WithText("<keyword=ruby> - <Item> gains <{a}> <keyword=goobers.burnagehit>")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "ruby";
+se.effectToApply = Get<StatusEffectData>("When Enemy Is Hit By Item Item Burnage");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        //UFIO-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("Hazescrapper")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantApplyEffect;
+
+realData.eventPriority = 1;
+realData.effectToApply = TryGet<StatusEffectData>("Scrap");
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantMultiple>("Hidescrapper")
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectInstantMultiple;
+
+    realData.effects = new StatusEffectInstant[]
+    {
+     TryGet<StatusEffectInstant>("Instahide"),
+     TryGet<StatusEffectInstant>("Hazescrapper")
+    };
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenHit>("Ghost self")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenHit;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("Scrap");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+
+}));
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenHit>("Ghost self2")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenHit;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("Hidden");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXEveryTurn>("Ghost self3")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectApplyXEveryTurn;
+
+ realData.eventPriority = 1;
+ realData.targetMustBeAlive = true;
+ realData.effectToApply = TryGet<StatusEffectData>("Cleanse");
+ realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenAllyIsHit>("Energy ally")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenAllyIsHit;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("Energy");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+     .Create<StatusEffectApplyXWhileHavingY>("JADE: UFO!")
+     .WithStackable(false)
+     .WithCanBeBoosted(false)
+     .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+     {
+         var se = data as StatusEffectApplyXWhileHavingY;
+         se.targetType = "jade";
+         se.effectToApply = Get<StatusEffectData>("Ghost self");
+         se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+         se.eventPriority = 100;
+
+
+     }));
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("JADE: UFO2!")
+.WithText("<keyword=jade> - When hit, gain 1<keyword=scrap>, and <{a}><keyword=hidew>. Also cleanse self every turn.")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+  var se = data as StatusEffectApplyXWhileHavingY;
+  se.targetType = "jade";
+  se.effectToApply = Get<StatusEffectData>("Ghost self2");
+  se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+  se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("JADE: UFO3!")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "jade";
+se.effectToApply = Get<StatusEffectData>("Ghost self3");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+     .Create<StatusEffectApplyXWhileHavingY>("SAP: UFO!")
+     .WithText("<keyword=sap> - When ally is hit, apply <{a}><keyword=energy> to them")
+     .WithStackable(true)
+     .WithCanBeBoosted(true)
+     .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+     {
+         var se = data as StatusEffectApplyXWhileHavingY;
+         se.targetType = "sap";
+         se.effectToApply = Get<StatusEffectData>("Energy ally");
+         se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+         se.eventPriority = 100;
+
+
+     }));
+        //DIVISH!---------------------------------------
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: retain spice")
+.WithText("<keyword=ruby> - All allies retain <keyword=spice>")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+   var se = data as StatusEffectApplyXWhileHavingY;
+   se.targetType = "ruby";
+   se.effectToApply = Get<StatusEffectData>("Halt Spice");
+   se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+   se.eventPriority = 100;
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+    .Create<StatusEffectHaltX>("Halt Energy")
+    .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+    {
+        var se = data as StatusEffectHaltX;
+se.effectToHalt = Get<StatusEffectData>("Energy");
+        se.eventPriority = 100;
+
+
+    }));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+  .Create<StatusEffectInstantLoseX>("Lose Energy")
+  .SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+  {
+      var se = data as StatusEffectInstantLoseX;
+      se.statusToLose = Get<StatusEffectData>("Energy");
+      se.eventPriority = 100;
+
+
+  }));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantLoseX>("Lose Spice")
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectInstantLoseX;
+    se.statusToLose = Get<StatusEffectData>("Spice");
+    se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("instalose energy")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantApplyEffect;
+
+realData.eventPriority = 1;
+realData.effectToApply = TryGet<StatusEffectData>("Lose Energy");
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("instalose spice")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectInstantApplyEffect;
+
+ realData.eventPriority = 1;
+ realData.effectToApply = TryGet<StatusEffectData>("Lose Spice");
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantMultiple>("Losespiceenergy")
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectInstantMultiple;
+
+    realData.effects = new StatusEffectInstant[]
+    {
+     TryGet<StatusEffectInstant>("instalose energy"),
+     TryGet<StatusEffectInstant>("instalose spice")
+    };
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: retain energy")
+.WithText("<keyword=sap> - All allies retain <keyword=energy>")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "sap";
+se.effectToApply = Get<StatusEffectData>("Halt Energy");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenCardMoves>("You Moved!")
+.WithText("When this card is <keyword=goobers.moved>, allies lose {a} <keyword=energy> and <keyword=spice>")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var se = data as StatusEffectApplyXWhenCardMoves;
+    se.whenSelfMoves = true;
+    se.whenEnemyMoves = false;
+    se.whenAllyMoves = false;
+ se.effectToApply = Get<StatusEffectData>("Losespiceenergy");
+ se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+ se.eventPriority = 100;
+
+
+}));
+
+
+        //WITCH FIRE FIST-----------------------------------------------------------------------------------------------------------------------------
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenHit>("Energy self on hit")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenHit;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("Energy");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    realData.applyEqualAmount = true;
+
+}));
+
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenAnyoneTakesDamage>("Inferno to Heal")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+    var realData = data as StatusEffectApplyXWhenAnyoneTakesDamage;
+
+    realData.eventPriority = 9999;
+    realData.targetMustBeAlive = false;
+    realData.effectToApply = TryGet<StatusEffectData>("Heal");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self | ApplyToFlags.AllyBehind;
+    realData.targetDamageType = "inferno";
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenAnyoneTakesDamage>("Inferno to spice")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenAnyoneTakesDamage;
+
+realData.eventPriority = 9999;
+realData.targetMustBeAlive = false;
+realData.effectToApply = TryGet<StatusEffectData>("Spice");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self | ApplyToFlags.AllyBehind;
+realData.targetDamageType = "inferno";
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectEXP>("DESFIREFIST")
+.WithText("When enemy takes <Inferno> Damage,")
+);
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: infer to spice")
+.WithText("<keyword=ruby> - Apply <{a}><keyword=spice> to self and ally behind")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
+    se.effectToApply = Get<StatusEffectData>("Inferno to spice");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self ;
+    se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("JADE: infer to Heal")
+.WithText("<keyword=jade> - Restore <{a}><keyword=health> to self and ally behind")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "jade";
+se.effectToApply = Get<StatusEffectData>("Inferno to Heal");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: dmg to energy")
+.WithText("<keyword=sap> - When hit, gain <keyword=energy> equal to damage received")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "sap";
+se.effectToApply = Get<StatusEffectData>("Energy self on hit");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        // MIKU----------------------------------------------------------------------------------------------------------------
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnTurn>("Melody Ally")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXOnTurn;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("ThinkinMiku");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyBehind| ApplyToFlags.Self;
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnTurn>("Melody Self")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXOnTurn;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("HandinHand");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.AllyInFrontOf;
+
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnTurn>("Melody Block")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXOnTurn;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("Block");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomAlly;
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: MIKU UP")
+.WithText("<keyword=ruby> - Apply <{a}><keyword=mikusupport> to ally ahead")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "ruby";
+se.effectToApply = Get<StatusEffectData>("Melody Self");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: MIKU BEAM")
+.WithText("<keyword=sap> - Apply <{a}><keyword=melody> to self and ally behind.")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "sap";
+se.effectToApply = Get<StatusEffectData>("Melody Ally");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("JADE: MIKU PROTEC")
+.WithText("<keyword=jade> - Apply <{a}><keyword=block> to random ally")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "jade";
+se.effectToApply = Get<StatusEffectData>("Melody Block");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("Miku sing")
+.WithText("Trigger <Hatsune Miku>")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+ .WithType("unfrenzy")
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+ var se = data as StatusEffectApplyXOnCardPlayed;
+ se.effectToApply = Get<StatusEffectData>("Trigger (High Prio)");
+ se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+ se.eventPriority = 100;
+    se.applyConstraints = new TargetConstraint[]
+{
+
+
+          new TargetConstraintIsSpecificCard()
+          {
+             allowedCards = new CardData[] { TryGet<CardData>("Miku") }
+          }
+
+
+};
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectAppearOnTopNoMatterWhat>("Super Ace")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+
+);
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectEXP>("Miku be triggered")
+.WithIsStatus(true)
+.WithVisible(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectEXP;
+    se.isReaction = true;
+
+}));
+
+
+
+
+
+        //ITEMS AGAIN
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnCardPlayed>("Burnage to all")
+.WithText("Apply <{a}> <keyword=burnage> to all enemies.")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+  var se = data as StatusEffectApplyXOnCardPlayed;
+  se.effectToApply = Get<StatusEffectData>("Burnage");
+  se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Enemies;
+  se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("Hide apply")
+.WithText("Apply {a} <keyword=hidew>")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantApplyEffect;
+
+realData.eventPriority = 1;
+realData.effectToApply = TryGet<StatusEffectData>("Hidden");
+    realData.targetConstraints = new TargetConstraint[]
+                     {
+
+          new TargetConstraintMaxCounterMoreThan(){moreThan=0},  new TargetConstraintHasTrait()
+                        {
+                            not= true, trait = Get<TraitData>("Taunt")
+
+                        },
+       new TargetConstraintIsUnit()
+         };
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantApplyEffect>("haste apply")
+.WithText("Apply <keyword=goobers.speed>")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+ var realData = data as StatusEffectInstantApplyEffect;
+
+ realData.eventPriority = 1;
+ realData.effectToApply = TryGet<StatusEffectData>("haste");
+ realData.targetConstraints = new TargetConstraint[]
+                  {
+        new TargetConstraintIsUnit()
+      };
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnHit>("Front Spice ally")
+.WithText("Apply <keyword=spice> to ally in front equal to damage dealt.")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXOnHit;
+se.effectToApply = Get<StatusEffectData>("Spice");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.FrontAlly;
+se.eventPriority = 100;
+    se.applyEqualAmount = true;
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectHaltX>("HiddenHide")
+
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectHaltX;
+{
+realData.effectToHalt = Get<StatusEffectData>("Hidden");
+
+}
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Hide")
+.WithText("<keyword=sap> - While active, apply <{a}> and retain <keyword=hidew> to all allies.")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "sap";
+se.effectToApply = Get<StatusEffectData>("HiddenHide");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+se.eventPriority = 100;
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("SAP: Hide2")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "sap";
+se.effectToApply = Get<StatusEffectData>("Hidden");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+se.eventPriority = 100;
+
+
+}));
+
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenAlliesAttack>("Assist Heal")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhenAlliesAttack;
+se.effectToApply = Get<StatusEffectData>("Heal");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Attacker;
+se.eventPriority = 100;
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenAlliesAttack>("Assist Burnage")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhenAlliesAttack;
+    se.effectToApply = Get<StatusEffectData>("Burnage");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.RandomEnemy;
+    se.eventPriority = 100;
+
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("Jade: Heal assist")
+.WithText("<keyword=jade> - When ally attacks, restore <{a}> <keyword=health>.")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhileHavingY;
+se.targetType = "jade";
+se.effectToApply = Get<StatusEffectData>("Assist Heal");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 100;
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhileHavingY>("RUBY: Burn assist")
+.WithText("<keyword=ruby> - When ally attacks, apply <{a}> <keyword=burnage> to a random enemy.")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhileHavingY;
+    se.targetType = "ruby";
+    se.effectToApply = Get<StatusEffectData>("Assist Burnage");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    se.eventPriority = 100;
+
+
+}));
+
+
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenCardMovesOnly1>("Impatient")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhenCardMovesOnly1;
+    se.effectToApply = Get<StatusEffectData>("Reduce Counter");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    se.eventPriority = 100;
+    se.whenEnemyMoves = true;
+    se.whenAllyMoves = false;
+    se.whenSelfMoves = false;
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenItemPlayed>("Impatient2")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXWhenItemPlayed;
+    se.effectToApply = Get<StatusEffectData>("Reduce Counter");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+    se.eventPriority = 101;
+
+
+
+}));
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenRedrawHitForItems>("Impatient3")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var se = data as StatusEffectApplyXWhenRedrawHitForItems;
+se.effectToApply = Get<StatusEffectData>("Reduce Counter");
+se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+se.eventPriority = 101;
+
+
+
+}));
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXOnTurn>("Shieldy shielder")
+.WithText("Apply <{a}><keyword=block> to self and random ally")
+.WithStackable(true)
+.WithCanBeBoosted(true)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var se = data as StatusEffectApplyXOnTurn;
+    se.effectToApply = Get<StatusEffectData>("Block");
+    se.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self| ApplyToFlags.RandomAlly;
+    se.eventPriority = 101;
+
+
+
+}));
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenHit>("When hit swap")
+.WithText("When hit, <keyword=goobers.swap> self")
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectApplyXWhenHit;
+
+realData.eventPriority = 1;
+realData.targetMustBeAlive = true;
+realData.effectToApply = TryGet<StatusEffectData>("Column Swap");
+realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+}));
+
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectNextPhase>("ShowguntoShowgun")
+.WithStackable(true)
+.WithCanBeBoosted(false)
+.WithType("nextphase")
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+var realData = data as StatusEffectNextPhase;
+realData.goToNextPhase = true;
+realData.nextPhase = TryGet<CardData>("Frost Core");
+realData.preventDeath = true;
+realData.animation = TryGet<StatusEffectNextPhase>("FinalBossPhase2").animation;
+
+}));
+
+
+        statusEffects.Add(
+new StatusEffectDataBuilder(this)
+.Create<StatusEffectInstantFillXBoardSlots>("Overwhelm Shogun")
+
+.WithStackable(false)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(data =>
+{
+var realData = data as StatusEffectInstantFillXBoardSlots;
+
+
+realData.eventPriority = 60;
+realData.withCards = new CardData[] { Get<CardData>("Guardianr"), Get<CardData>("Guardianr"), Get<CardData>("Torcherer"), Get<CardData>("Rusher"), Get<CardData>("Ekahaka"), Get<CardData>("Shielder"), Get<CardData>("Shinobi") };
+realData.clearBoardFirst = true;
+
+
+}
+
+));
+
+
+
+
+
+        statusEffects.Add(new StatusEffectDataBuilder(this)
+.Create<StatusEffectApplyXWhenDeployed>("ShogunPhase2")
+.WithStackable(true)
+.WithCanBeBoosted(false)
+.SubscribeToAfterAllBuildEvent(delegate (StatusEffectData data)
+{
+    var realData = data as StatusEffectApplyXWhenDeployed;
+    realData.effectToApply = Get<StatusEffectData>("Overwhelm Shogun");
+    realData.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+
+
+
+}));
+
+
+
+        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
+        //FRIENDLY ASHI STUFF----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -19528,7 +21267,7 @@ new StatusEffectDataBuilder(this)
                 data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
                 {
                      SStack("Gain Sweet Point Self terror",1),
-                     SStack("Not Fast Enough",11),
+                     SStack("Not Fast Enough",13    ),
                      SStack("FullImmuneToSnow",1),
                      SStack("FullImmuneToInk",1),
                      SStack("Trigger Front",1),
@@ -19775,7 +21514,7 @@ data.createScripts = new CardScript[]  //These scripts run when right before Eve
         //TALA ITEMS---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
         cards.Add(
-       new CardDataBuilder(this).CreateItem("Nightshade", "Weaponized Nightshade")
+       new CardDataBuilder(this).CreateItem("Nightshadetala", "Weaponized Nightshade")
        .SetSprites("Nightshade.png", "Tala BG.png")
        .SetStats(null, null)
        .WithCardType("Item")
@@ -20614,7 +22353,7 @@ new CardDataBuilder(this).CreateUnit("Kase", "Kase")
 {
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                   {
-SStack("Ruby: Attack Apply SELF",3), SStack("Ruby: Attack ApplyHURT",2),SStack("Jade: heal self",2),SStack("Boosthelp",1)
+SStack("Ruby: Attack Apply SELF",2), SStack("Ruby: Attack ApplyHURT",3),SStack("Jade: heal self",2),SStack("Boosthelp",1)
     };
 
     data.attackEffects = new CardData.StatusEffectStacks[]
@@ -20651,7 +22390,7 @@ new CardDataBuilder(this).CreateUnit("Paralz", "Paralz")
   };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                 {
-SStack("Jade: Item left boost",3),SStack("SAP: Ally charge",2),SStack("SAP: Ally chargeVert",2),SStack("Boosthelp",1)
+SStack("Jade: Item left boost",2),SStack("SAP: Ally charge",1),SStack("SAP: Ally chargeVert",1),SStack("Boosthelp",1)
   };
 
 
@@ -20672,7 +22411,7 @@ SStack("Jade: Item left boost",3),SStack("SAP: Ally charge",2),SStack("SAP: Ally
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Scrya", "Scrya")
 .SetSprites("SCRYA.png", "SCRYA BG.png")
-.SetStats(12, 2, 4)
+.SetStats(13, 4, 4)
 .WithCardType("Leader")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -20707,7 +22446,7 @@ SStack("SAP: Foretell",1),SStack("Ruby: Remember",1),SStack("Boosthelp",1),SStac
         cards.Add(
 new CardDataBuilder(this).CreateItem("Foretell", "Foretell")
 .SetSprites("FORTELL.png", "FORTELL BG.png")
-.SetStats(null, 3)
+.SetStats(null, 1)
 .WithCardType("Item")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -20739,7 +22478,7 @@ SStack("Deck finding time",1)
         cards.Add(
 new CardDataBuilder(this).CreateItem("Rememberance", "Rememberance")
 .SetSprites("REMEMBER.png", "REMEMBER BG.png")
-.SetStats(null, 3)
+.SetStats(null, 1)
 .WithCardType("Item")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -20805,23 +22544,114 @@ SStack("Jade: Stall",2),SStack("Ruby: Attack!",1),SStack("SAP: Self care",2),SSt
 })
 );
 
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Amber", "Amber")
+.SetSprites("AMBERS.png", "AMBERS BG.png")
+.SetStats(9, 0, 4)
+.WithCardType("Leader")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
 
 
+data.attackEffects = new CardData.StatusEffectStacks[]
+   {
 
+       SStack("Burnage",4)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                           {
 
-        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
-        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
-        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
-        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
-        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
+SStack("RUBY: fire to attack",2),SStack("JADE: inferno to shell",1)
 
+};
+data.traits = new List<CardData.TraitStacks>
+{
+    CreateTraitStack("Aimless",1)
+};
 
-        //Kase-------------------------------------------------------------------------------------------
+data.createScripts = new CardScript[]  //These scripts run when right before Events.OnCardDataCreated
+       {
+                   GiveUpgrade(),                   //By our definition, no argument will give a crown
+};
+})
+);
 
-
-
+        cards.Add(
+   new CardDataBuilder(this).CreateUnit("Miku", "Hatsune Miku")
+   .SetSprites("MIKU1.png", "MIKU1 BG.png")
+   .SetStats(8, 4, 0)
+   .WithCardType("Leader")
+   .WithText("<keyword=goobers.multiart> <keyword=goobers.specialty>")
+   .SubscribeToAfterAllBuildEvent(delegate (CardData data)
+   {
        
 
+       data.attackEffects = new CardData.StatusEffectStacks[]
+       {
+
+   SStack("Rabbithole",2)
+   };
+       data.startWithEffects = new CardData.StatusEffectStacks[]
+                                               {
+
+SStack("RUBY: MIKU UP",3),SStack("SAP: MIKU BEAM",1),SStack("JADE: MIKU PROTEC",1),SStack("Block",2),SStack("Miku be triggered",1)
+
+   };
+       data.traits = new List<CardData.TraitStacks>
+   {
+  CreateTraitStack("Energyorganics",1)
+   };
+
+       data.createScripts = new CardScript[]  //These scripts run when right before Events.OnCardDataCreated
+           {
+                   GiveUpgrade(),                   //By our definition, no argument will give a crown
+   };
+   })
+   );
+
+
+
+
+
+        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
+        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
+        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
+        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
+        //SPECIALTY CARDS!!! --------------------------------------------------------------------------
+
+
+        //Miku-------------------------------------------------------------------------------------------
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Mikus staff", "Miku's Microphone")
+.SetSprites("Miku's Microphone.png", "Miku's Microphone BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.NeedsTarget(false)
+.WithText("Cannot gain <keyword=frenzy>")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+ data.attackEffects = new CardData.StatusEffectStacks[]
+ {
+
+
+};
+ data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                {
+
+SStack("Miku sing",1),SStack("owntempoing",1)
+};
+
+ data.traits = new List<CardData.TraitStacks>
+{
+  CreateTraitStack("Retain", 1) , CreateTraitStack("Cursed", 1),CreateTraitStack("Reliable", 1),CreateTraitStack("Zoomlin", 1)
+};
+
+
+})
+);
 
 
 
@@ -20850,7 +22680,7 @@ new CardDataBuilder(this).CreateUnit("Trixy", "Trixy") //1
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                    {
 
-SStack("On turn Row Swap",1),SStack("Jade: Reduce Counter Vertical",3),SStack("Boosthelp",1),SStack("speed",1)
+SStack("On turn Row Swap",1),SStack("Jade: Reduce Counter Vertical",3),SStack("Boosthelp",1),SStack("haste",1)
     };
 
 
@@ -20882,7 +22712,7 @@ new CardDataBuilder(this).CreateUnit("Shera", "Sherii") //2
    };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                       {
-SStack("SAP: Longshot",1), SStack("Ruby: add damage",4),SStack("Jade: Reload",3), SStack("Boosthelp",1)
+SStack("SAP: Longshot",1), SStack("Ruby: add damage",3),SStack("Jade: Reload",2), SStack("Boosthelp",1)
 
    };
 
@@ -21066,7 +22896,7 @@ SStack("Weakness",2)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("WitchDimona", "Dimona") //8
 .SetSprites("DEAMONA.png", "DEAMONA BG.png")
-.SetStats(7, 5, 4)
+.SetStats(7, 4, 4)
 .WithCardType("Friendly")
 .WithFlavour("Why did you do this...")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -21160,7 +22990,7 @@ new CardDataBuilder(this).CreateUnit("Esber", "Esber") //10
 new CardDataBuilder(this).CreateUnit("Ramel", "Ramel") //11
 .SetSprites("RAMEL.png", "RAMEL BG.png")
 .WithFlavour("I could slap you rn")
-.SetStats(8, null, 5)
+.SetStats(10, null, 5)
 .WithCardType("Friendly")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -21174,7 +23004,7 @@ new CardDataBuilder(this).CreateUnit("Ramel", "Ramel") //11
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                 {
-       SStack("Jade: Heal row jade",4),SStack("Jade: Heal row jade2",4),SStack("SAP: Reduce Column",1),SStack("Boosthelp",1)
+       SStack("Jade: Heal row jade",6),SStack("Jade: Heal row jade2",6),SStack("SAP: Reduce Column",3),SStack("Boosthelp",1)
 
     };
     data.traits = new List<CardData.TraitStacks>
@@ -21201,7 +23031,7 @@ new CardDataBuilder(this).CreateUnit("Moorhsum", "Moorhsum") //12
     data.attackEffects = new CardData.StatusEffectStacks[]
                                      {
 
-SStack("Shroom",3)
+SStack("Shroom",2)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                 {
@@ -21249,7 +23079,7 @@ SStack("Shroom",1)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Chingle", "Chingle") //14
 .SetSprites("CHINGLE.png", "CHINGLE BG.png")
-.SetStats(10, 2, 3)
+.SetStats(10, 3, 3)
 .WithFlavour("*cannot ring there for cannot shout how canrgy she is*")
 .WithCardType("Friendly")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -21263,7 +23093,7 @@ new CardDataBuilder(this).CreateUnit("Chingle", "Chingle") //14
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                 {
-                SStack("Jade: On turn full charge",1),SStack("Jade: On turn counter",1),SStack("Jade: Passive",1),SStack("SAP: redraw shell",3),SStack("Boosthelp",1)
+                SStack("Jade: On turn full charge",1),SStack("Jade: On turn counter",1),SStack("Jade: Passive",1),SStack("SAP: redraw shell",4),SStack("Boosthelp",1)
     };
     data.traits = new List<CardData.TraitStacks>
     {
@@ -21278,7 +23108,7 @@ new CardDataBuilder(this).CreateUnit("Chingle", "Chingle") //14
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Lea", "Lea") //15
 .SetSprites("LEA.png", "LEA BG.png")
-.SetStats(10, 5, 8)
+.SetStats(7, 5, 8)
 .WithFlavour("YO WTF NOT COOL DUDE")
 .WithCardType("Friendly")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -21307,7 +23137,7 @@ SStack("Jolt",1)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Royal Witch", "Charlotte") //16   STILL NEED TO BE CODED XD
 .SetSprites("CHARLOTTE.png", "CHARLOTTE BG.png")
-.SetStats(5, null, 0)
+.SetStats(6, null, 0)
 .WithFlavour("Ho ho ho, you may have removes my crowns, but I'm still a queen !")
 .WithCardType("Friendly")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -21357,7 +23187,7 @@ new CardDataBuilder(this).CreateUnit("Acorny", "Aca Aca") //17
     };
     data.traits = new List<CardData.TraitStacks>
     {
-
+         CreateTraitStack("Energyshellic", 1)
     };
 
 
@@ -21434,11 +23264,11 @@ new CardDataBuilder(this).CreateUnit("WitchZula", "Zula") //20
 
     data.attackEffects = new CardData.StatusEffectStacks[]
                                                              {
-SStack("Overload",1)
+SStack("Overload",2)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                         {
-SStack("Trigger When Enemy Is Killed",1),SStack("Ruby: Zula",1),SStack("SAP: Zula",2)
+SStack("Trigger When Enemy Is Killed",1),SStack("Ruby: Zula",1),SStack("SAP: Zula",1)
     };
     data.traits = new List<CardData.TraitStacks>
     {
@@ -21453,7 +23283,7 @@ SStack("Trigger When Enemy Is Killed",1),SStack("Ruby: Zula",1),SStack("SAP: Zul
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Fey", "Fey") //21
 .SetSprites("FEY.png", "FEY BG.png")
-.SetStats(7, 1, 4)
+.SetStats(5, 1, 4)
 .WithCardType("Friendly")
 .WithFlavour("M-my flowers :c")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -21619,7 +23449,7 @@ SStack("Frost",2)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                 {
-SStack("speed",1),SStack("Hurt self preturneka",2), SStack("SAP: Heal ntext",8), SStack("SAP: Heal ntext2",1),SStack("Boosthelp",1)
+SStack("haste",1),SStack("Hurt self preturneka",2), SStack("SAP: Heal ntext",8), SStack("SAP: Heal ntext2",1),SStack("Boosthelp",1)
 
     };
     data.traits = new List<CardData.TraitStacks>
@@ -21663,7 +23493,7 @@ SStack("Ruby: Trigger Against When Frost Appliedntext",1),SStack("SAP: On Turn A
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Yuu Yuu", "Yuu Yuu") //28
 .SetSprites("YUUYUU.png", "YUUYUU BG.png")
-.SetStats(4, null, 6)
+.SetStats(7, null, 5)
 .WithCardType("Friendly")
 .WithFlavour("*She shakes her head in disapproval*")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -21763,7 +23593,7 @@ new CardDataBuilder(this).CreateUnit("Gemyni", "Gemyni") //21
    };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                          {
-SStack("Null",2),SStack("Ruby: SAP",1),SStack("SAP: JADE",1),SStack("Jade: RUBY",1)
+SStack("Ruby: SAP",1),SStack("SAP: JADE",1),SStack("Jade: RUBY",1)
    };
     data.traits = new List<CardData.TraitStacks>
     {
@@ -21781,6 +23611,7 @@ new CardDataBuilder(this).CreateUnit("Tano Shi", "Tano Shi") //32
 .SetSprites("TANOSHI.png", "TANOSHI BG.png")
 .SetStats(12, 4, 3)
 .WithCardType("Friendly")
+.WithText("<keyword=goobers.note>")
 .WithFlavour("Hehe alright my guy, whatever you say.")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
@@ -21792,7 +23623,7 @@ new CardDataBuilder(this).CreateUnit("Tano Shi", "Tano Shi") //32
    };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                          {
-SStack("When deployed duplicate",1),SStack("When deployed duplicate2",1)
+SStack("When deployed duplicate",1)
    };
     data.traits = new List<CardData.TraitStacks>
     {
@@ -21802,6 +23633,229 @@ SStack("When deployed duplicate",1),SStack("When deployed duplicate2",1)
 
 })
 );
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Mihiya", "Mihiya") //33
+.SetSprites("MIHIYA.png", "MIHIYA BG.png")
+.SetStats(1, 7, 8)
+.WithCardType("Friendly")
+.WithFlavour("The mist has cleared...")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+data.greetMessages = ["Let's hide amongst the mist... I will keep you safe..."];
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+{
+  
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                    {
+SStack("Hidden",8),SStack("SAP: Hide ally",1),SStack("RUBY: Hide enemy front",1)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Paseereree", "Paseereree") //34
+.SetSprites("PASSREE.png", "PASSREE BG.png")
+.SetStats(5, 2, 4)
+.WithCardType("Friendly")
+.WithFlavour("WHAT THE FLIP >:C")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+data.greetMessages = ["*Jumps around with joy* Yaaay the snow! *touches it* AAAAHHHH TOO COLD! Pwease help me get rid of it XC"];
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+    {
+        SStack("Count Up Counter",2)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                        {
+SStack("Hidden",2),SStack("Jade: Hide self",2),SStack("SAP: Block ally",1)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+    CreateTraitStack("Energyorganics",1)
+}; 
+
+
+})
+);
+
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Permia", "Permia") //35
+.SetSprites("PERMIA.png", "PERMIA BG.png")
+.SetStats(8, 5, 5)
+.WithCardType("Friendly")
+.WithFlavour("The mist has cleared...")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+data.greetMessages = ["Hehe, let's torment some worthless creatures."];
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+        {
+       SStack("Burnage",2)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                            {
+SStack("RUBY: Burn Splode",3),SStack("Jade: Burn Splode",2)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+
+};
+
+
+})
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Eraness", "Eraness") //36
+.SetSprites("ERANESS.png", "ERANESS BG.png")
+.SetStats(7, null, 4)
+.WithCardType("Friendly")
+.WithFlavour("The mist has cleared...")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+data.greetMessages = ["Let the warmth melt away the cold..."];
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+            {
+       SStack("Burnage",3)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                {
+SStack("RUBY: Eraness Burnage",4),SStack("SAP: Eraness Overload",2)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+    CreateTraitStack("BlindShot",1)
+};
+
+
+})
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Forgo", "Forgo") //36
+.SetSprites("FORGO.png", "FORGO BG.png")
+.SetStats(13, 0, 3)
+.WithCardType("Friendly")
+.WithFlavour("The mist has cleared...")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+data.greetMessages = ["*Furnace noises* Your weapons don't look that great, let me give em a bit more kick to em.."];
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                {
+       
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                    {
+SStack("DESCFORGO",1),SStack("RUBY: Forgo",2),SStack("SAP: Forgo",2),SStack("JADE: Forgo",1)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+   CreateTraitStack("Passive",1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Ufio", "U-Fi-O") //37
+.SetSprites("UNFIO.png", "UNFIO BG.png")
+.SetStats(5, 4, 5)
+.WithCardType("Friendly")
+.WithFlavour("The mist has cleared...")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+data.greetMessages = ["Woomp woomp woomp woomp! Hello wildfrostian! will you need my aid? :D."];
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                    {
+SStack("Jolt",3)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                        {
+SStack("Scrap",1),SStack("Hidden",2),SStack("JADE: UFO!",1),SStack("JADE: UFO2!",1),SStack("JADE: UFO3!",1),SStack("SAP: UFO!",5)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+   CreateTraitStack("Frontline",1), CreateTraitStack("Fragile",1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Divish", "Divish") //38
+.SetSprites("DIVISH.png", "DIVISH BG.png")
+.SetStats(8, 0, 0)
+.WithCardType("Friendly")
+.WithFlavour("The mist has cleared...")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+data.greetMessages = ["WASTE OF ENERGY AND SPICE, GET YOUR SH-T TOGETHER! I WILL MONITOR YOU!"];
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                        {
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                            {
+
+SStack("You Moved!",999999999),SStack("RUBY: retain spice",1),SStack("SAP: retain energy",1)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+};
+
+
+})
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("FirefistWitch", "Firefist") //39
+.SetSprites("FIREYFISTO.png", "FIREYFISTO BG.png")
+.SetStats(13, 0, 5)
+.WithCardType("Friendly")
+.WithFlavour("The mist has cleared...")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+  data.greetMessages = ["Let set those frosted creatures ablaze."];
+
+  data.attackEffects = new CardData.StatusEffectStacks[]
+                            {
+                                SStack("Burnage",2)
+};
+  data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                {
+SStack("DESFIREFIST",1),SStack("RUBY: infer to spice",3),SStack("JADE: infer to Heal",4),SStack("SAP: dmg to energy",1),
+
+};
+  data.traits = new List<CardData.TraitStacks>
+  {
+  };
+
+
+})
+);
+
+
 
 
         //PETS------------------------------
@@ -21836,7 +23890,7 @@ SStack("Deck finding timefrog",1)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Ooomi", "Ooomi") //30
 .SetSprites("OOMI.png", "OOMI BG.png")
-.SetStats(5, null, 4)
+.SetStats(5, null, 5)
 .WithCardType("Friendly")
 .WithFlavour("MOPOMWPOMW[[P,M[SSCSDE")
 .IsPet("", true)
@@ -21848,7 +23902,7 @@ new CardDataBuilder(this).CreateUnit("Ooomi", "Ooomi") //30
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                          {
-SStack("Block",1),SStack("Energy for friend",2)
+SStack("Block",2),SStack("Energy for friend",2)
 
     };
     data.traits = new List<CardData.TraitStacks>
@@ -21863,7 +23917,7 @@ SStack("Block",1),SStack("Energy for friend",2)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Volta", "Volta") //30
 .SetSprites("Jolitio.png", "Jolitio BG.png")
-.SetStats(4, 2, 3)
+.SetStats(5, 2, 3)
 .WithCardType("Friendly")
 .WithFlavour("Meow???")
 .IsPet("", true)
@@ -21875,7 +23929,7 @@ new CardDataBuilder(this).CreateUnit("Volta", "Volta") //30
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                              {
-SStack("speed",1)
+SStack("haste",1)
 
     };
     data.traits = new List<CardData.TraitStacks>
@@ -22004,7 +24058,7 @@ SStack("Uses",2),SStack("Nightshade to hand",1)
 );
 
         cards.Add(
-new CardDataBuilder(this).CreateItem("Nightshade", "Nightshade")
+new CardDataBuilder(this).CreateItem("Nightshade2", "Nightshade")
 .SetSprites("NSHADE.png", "NSHADE BG.png")
 .SetStats(null, 0)
 .WithCardType("Item")
@@ -22039,6 +24093,7 @@ new CardDataBuilder(this).CreateItem("Chained Blade", "Chained Blade") //4
 .WithValue(54)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
+    data.crownSlots = -100;
     data.uses = 1000;
     data.attackEffects = new CardData.StatusEffectStacks[]
         {
@@ -22098,7 +24153,7 @@ new CardDataBuilder(this).CreateItem("Corrupted Hail", "Corrupa Hail") //5
 
     data.attackEffects = new CardData.StatusEffectStacks[]
                 {
-SStack("Frost",3)
+SStack("Frost",2)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                      {
@@ -22155,7 +24210,7 @@ new CardDataBuilder(this).CreateItem("Berry Potion", "Berry Potion") //7
 
     data.attackEffects = new CardData.StatusEffectStacks[]
                     {
-SStack("Increase Max Health",5)
+SStack("Increase Max Health",4)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                          {
@@ -22354,7 +24409,7 @@ new CardDataBuilder(this).CreateItem("Energizing Sapphire", "Ene Synthesis") //1
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                        {
-SStack("Uses",2),SStack("energy to sap allies",3)
+SStack("Uses",2),SStack("energy to sap allies",2)
     };
     data.traits = new List<CardData.TraitStacks>
     {
@@ -22411,7 +24466,7 @@ new CardDataBuilder(this).CreateItem("Barricade", "Barricade") //15
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                                {
-SStack("Uses",2),SStack("On Card Played Apply Shell To Allies",3)
+SStack("Uses",2),SStack("NEW SHELLER",3)
     };
     data.traits = new List<CardData.TraitStacks>
     {
@@ -22433,6 +24488,7 @@ new CardDataBuilder(this).CreateItem("Barrier", "Barrier") //16
 .WithValue(48)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
+    data.crownSlots = -100;
     data.uses = 10000;
     data.attackEffects = new CardData.StatusEffectStacks[]
                               {
@@ -22440,11 +24496,11 @@ SStack("Block",1)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                                    {
-SStack("Uses",1)
+SStack("Uses",2)
     };
     data.traits = new List<CardData.TraitStacks>
     {
-
+       CreateTraitStack("Retain",1)
     };
 
 
@@ -22494,7 +24550,7 @@ new CardDataBuilder(this).CreateItem("Bottled Energy", "Bottled Energy") //18
 
     data.attackEffects = new CardData.StatusEffectStacks[]
                                     {
-SStack("Energy",4)
+SStack("Energy",1)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                                          {
@@ -22521,7 +24577,7 @@ new CardDataBuilder(this).CreateItem("Halved Snowcake", "Halved Snowcake") //19
 
     data.attackEffects = new CardData.StatusEffectStacks[]
                                        {
-SStack("Snow",5)
+SStack("Snow",6)
    };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                                                                             {
@@ -22700,7 +24756,7 @@ new CardDataBuilder(this).CreateItem("Last Resort", "Last Resort") //24
  };
     data.attackEffects = new CardData.StatusEffectStacks[]
                                                {
-SStack("Block",5),SStack("Set Max Health1",1),SStack("Temporary Fragile",1)
+SStack("Block",6),SStack("Set Max Health1",1),SStack("Temporary Fragile",1)
 
 };
     data.startWithEffects = new CardData.StatusEffectStacks[]
@@ -22849,6 +24905,7 @@ new CardDataBuilder(this).CreateItem("Swapy", "Swapy") //29
 .WithValue(48)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 {
+    data.crownSlots = -100;
     data.uses = 1000;
 
     data.attackEffects = new CardData.StatusEffectStacks[]
@@ -22881,7 +24938,7 @@ new CardDataBuilder(this).CreateItem("Furia", "Furia") //30
 
     data.attackEffects = new CardData.StatusEffectStacks[]
                                                                 {
-SStack("Instant Gain Fury",13)
+SStack("Instant Gain Fury",16)
     };
     data.startWithEffects = new CardData.StatusEffectStacks[]
                               {
@@ -22896,7 +24953,341 @@ SStack("Instant Gain Fury",13)
 })
 );
 
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Fire Spell", "Fire Spell") //31
+.SetSprites("FIRESPELL.png", "FIRESPELL BG.png")
+.SetStats(null, 1)
+.WithCardType("Item")
+.WithFlavour("")
+.WithValue(49)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                                          {
+    SStack("Burnage",3)
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                               {
+SStack("Uses",3),
+  SStack("Increase own effects",2)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Bomba Bomba", "Bomby Bombba") //32
+.SetSprites("BOMBABA.png", "BOMBABA BG.png")
+.SetStats(null, 1)
+.WithCardType("Item")
+.WithFlavour("")
+.WithValue(69)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                                              {
+    SStack("Weakness",4)
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                   {
+
+};
+data.traits = new List<CardData.TraitStacks>
+{
+     CreateTraitStack("Barrage",1),CreateTraitStack("Consume",1)
+};
+
+
+})
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Frenzy Spell", "Hyperio") //33
+.SetSprites("HYPERIO.png", "HYPERIO BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.WithFlavour("")
+.CanPlayOnHand(true)
+.NeedsTarget(true)
+.WithText("Can only be played on Items")
+.WithValue(100)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+    data.targetConstraints = new TargetConstraint[]
+  {
+        new TargetConstraintIsItem()
+
+
+  };
+
+    data.attackEffects = new CardData.StatusEffectStacks[]
+                                                  {
+    SStack("MultiHit",2)
+
+    };
+    data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                       {
+
+    };
+    data.traits = new List<CardData.TraitStacks>
+{
+     CreateTraitStack("Consume",1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Rush Spell", "Caff Finy") //34
+.SetSprites("CAFFY.png", "CAFFY BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.WithFlavour("")
+.CanPlayOnHand(true)
+.NeedsTarget(true)
+.WithValue(71)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                                             {
+    SStack("Expresso",1)
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                  {
+  SStack("Increase own effects",1),SStack("Uses",2)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+    
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("GIANT ROCK", "GIANT ROCK GO!") //35
+.SetSprites("BIGROCK.png", "BIGROCK BG.png")
+.SetStats(null, 20)
+.WithCardType("Item")
+.WithFlavour("This is just a giant rock")
+.WithValue(66)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                                                 {
+  
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                      {
+
+};
+data.traits = new List<CardData.TraitStacks>
+{
+     CreateTraitStack("Consume",1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Fire Storm", "Blaze Storm") //36
+.SetSprites("FIRESTORM.png", "FIRESTORM BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.WithFlavour("")
+.NeedsTarget(false)
+.WithValue(80)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+ data.attackEffects = new CardData.StatusEffectStacks[]
+                                                     {
+
+
+};
+ data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                          {
+SStack("Burnage to all",7)
+};
+ data.traits = new List<CardData.TraitStacks>
+{
+     CreateTraitStack("Consume",1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Ghost Spell", "Ghostify") //37
+.SetSprites("GHOSTIFY.png", "GHOSTIFY BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.WithFlavour("")
+.CanPlayOnHand(true)
+.NeedsTarget(true)
+.WithValue(50)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                                                        {
+
+SStack("Hide apply",1)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                             {
+SStack("Uses",2)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+    
+};
+
+
+})
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Spice Dagger", "Spicy Dagger") //39
+.SetSprites("SPICEDAGGER.png", "SPICEDAGGER BG.png")
+.SetStats(null, 5)
+.WithCardType("Item")
+.WithFlavour("")
+.WithValue(56)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                                                                {
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                                     {
+SStack("Uses",2),SStack("Front Spice ally",1)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+   
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Gunpower Throw", "Gun Powder Punch!") //39
+.SetSprites("GUNPOWDER.png", "GUNPOWDER BG.png")
+.SetStats(null, 2)
+.WithCardType("Item")
+.WithFlavour("")
+.WithValue(56)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+data.attackEffects = new CardData.StatusEffectStacks[]
+                                                                    {
+
+SStack("Weakness",3)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                                         {
+SStack("Uses",3)
+};
+data.traits = new List<CardData.TraitStacks>
+{
+
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Snowman Attack", "Snowman Fall") //40
+.SetSprites("SNOWMAN GO.png", "SNOWMAN GO BG.png")
+.SetStats(null, 1)
+.WithCardType("Item")
+.WithFlavour("")
+.WithValue(66)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+ data.attackEffects = new CardData.StatusEffectStacks[]
+                                                                        {
+
+SStack("Snow",2)
+};
+ data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                                             {
+SStack("Uses",2)
+};
+ data.traits = new List<CardData.TraitStacks>
+ {
+     CreateTraitStack("Barrage",1)
+ };
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateItem("Ghostflame Spell", "SpookSpookius") //41
+.SetSprites("OVERLOAD SPELL.png", "OVERLOAD SPELL BG.png")
+.SetStats(null, null)
+.WithCardType("Item")
+.WithFlavour("")
+.WithValue(66)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+
+    data.attackEffects = new CardData.StatusEffectStacks[]
+                                                                           {
+
+SStack("Overload",2)
+   };
+    data.startWithEffects = new CardData.StatusEffectStacks[]
+                                                                                                                {
+SStack("Uses",2), SStack("Increase own effects",2)
+   };
+    data.traits = new List<CardData.TraitStacks>
+ {
+   
+ };
+
+
+})
+);
+
         //KLUNKERS!-------------------------------------------------------
+
+
 
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Bomby Bibidity", "Bomby Bibidity") //31
@@ -23033,7 +25424,62 @@ SStack("Scrap",3),SStack("Chompy time",2),SStack("Boosthelp",1)
 })
 );
 
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Smoke Machine", "Ghostly Fog Producer") //32
+.SetSprites("SMOKEY SMOKE.png", "SMOKEY SMOKE BG.png")
+.SetStats(null, null, 0)
+.WithCardType("Clunker")
+.WithValue(48)
+.WithFlavour("Magicless Behaviour")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
 
+ data.attackEffects = new CardData.StatusEffectStacks[]
+                                                                  {
+
+ };
+ data.startWithEffects = new CardData.StatusEffectStacks[]
+                                {
+SStack("Scrap",3),SStack("SAP: Hide",1),SStack("SAP: Hide2",1)
+ };
+ data.traits = new List<CardData.TraitStacks>
+{
+      
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Assist Cato", "Clunky Kitty") //32
+.SetSprites("CATFAM.png", "CATFAM BG.png")
+.SetStats(null, 1, 3)
+.WithCardType("Clunker")
+.WithValue(48)
+.WithFlavour("Magicless Behaviour")
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+{
+
+    data.attackEffects = new CardData.StatusEffectStacks[]
+                                                                     {
+
+    };
+    data.startWithEffects = new CardData.StatusEffectStacks[]
+                                   {
+SStack("Scrap",1),SStack("RUBY: Burn assist",2),SStack("Jade: Heal assist",1)
+    };
+    data.traits = new List<CardData.TraitStacks>
+    {
+
+    };
+
+
+})
+);
+
+
+        
         //INVENTORY CARDS!---------------------------------------------
         //INVENTORY CARDS!---------------------------------------------
         //INVENTORY CARDS!---------------------------------------------
@@ -23713,7 +26159,7 @@ new CardDataBuilder(this).CreateUnit("Restagselect", "Tag of Resurrection")
  SStack("kms",1),SStack("Gain Restag",1),SStack("To Hand Restag",1)
 
 };
-
+ 
 
 })
 );
@@ -25336,7 +27782,7 @@ SStack("Frost",3)
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Berryglury", "Robberry")
 .SetSprites("BERRYGLURY.png", "BLINGBG.png")
-.SetStats(8, 3, 2)
+.SetStats(8, 2, 3)
 .WithCardType("Enemy")
 .WithFlavour("")
 .WithValue(30)
@@ -25918,13 +28364,458 @@ data.traits = new List<CardData.TraitStacks>
 
 })
 );
-        //WITCH STUFFFFF
+        //SHOGUN SHOWDOWN FIGHT!------------------------------------------------------------------------------------
 
 
 
+        
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Ashigari", "Ashigari")
+.SetSprites("ASHIGARI.png", "REDS BG.png")
+.SetStats(19, 1, 3)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+    data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                {
+
+    };
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                {
+              SStack("On turn Row Swap",1),SStack("On Card Played Apply Attack To Self",1)
+    };
+    data.traits = new List<CardData.TraitStacks>
+
+    {
+      CreateTraitStack("Vigilant", 1)
+ };
 
 
+})
+);
 
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Tachis", "Tachis")
+.SetSprites("TACHIS.png", "GREENS BG.png")
+.SetStats(16, 2, 3)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                            {
+SStack("Shroom",1)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                            {
+              SStack("On turn Row Swap",1),SStack("MultiHit",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+           
+};
+
+
+})
+);
+
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Tackler", "Tackler")
+.SetSprites("TACKLER.png", "REDS BG.png")
+.SetStats(12, 0, 1)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+  data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                {
+SStack("Frost",2)
+};
+  data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                {
+             SStack("haste",1),SStack("FullImmuneToInk",1)
+};
+  data.traits = new List<CardData.TraitStacks>
+
+{
+          CreateTraitStack("Knockback", 4)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Yarigari", "Yari")
+.SetSprites("YARIGUY.png", "YARIGRAY BG.png")
+.SetStats(18, 2, 5)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                          {
+SStack("Snow",2)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                          {
+              SStack("On turn Row Swap",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+          CreateTraitStack("Vigilant", 1), CreateTraitStack("Barrage", 1)
+};
+
+
+})
+);
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Archer", "Archer Ashigari")
+.SetSprites("ARCHERGUY.png", "YARIGRAY BG.png")
+.SetStats(17, 3, 5)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                  {
+SStack("Demonize",2)
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                  {
+ SStack("On turn Row Swap",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+           CreateTraitStack("Vigilant", 1),CreateTraitStack("Longshot", 1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Guardianr", "Guardian")
+.SetSprites("GUARDIANER.png", "GUARDE BG.png")
+.SetStats(30, 8, 10)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+    data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                      {
+
+    };
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                      {
+ SStack("ImmuneToSnow",1),SStack("FullImmuneToInk",1),SStack("Shell",10)
+    };
+    data.traits = new List<CardData.TraitStacks>
+
+{
+           CreateTraitStack("Vigilant", 2),CreateTraitStack("Frontline", 1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Grappler", "Hooky")
+.SetSprites("GRAPPLERS.png", "GUARDE BG.png")
+.SetStats(21, 3, 6)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+    data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                          {
+
+    };
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                          {
+SStack("haste",1),SStack("Trigger When Ally In Row Attacks",1), SStack("On turn Row Swap",1)
+    };
+    data.traits = new List<CardData.TraitStacks>
+
+{
+          CreateTraitStack("Backline", 1),CreateTraitStack("Pull", 3),CreateTraitStack("Longshot", 1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Shinobi", "Shiobi")
+.SetSprites("SHINOBI.png", "YARIGRAY BG.png")
+.SetStats(16, 2, 2)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+    data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                            {
+SStack("Null",2)
+  };
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                            {
+SStack("haste",1), SStack("On turn Row Swap",1),SStack("FullImmuneToInk",1)
+  };
+    data.traits = new List<CardData.TraitStacks>
+
+{
+           CreateTraitStack("Vigilant", 1),CreateTraitStack("Aimless", 1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Shielder", "Shiely")
+.SetSprites("SHIELDY.png", "SHIELDY BG.png")
+.SetStats(15, null, 4)
+.WithCardType("Enemy")
+.WithValue(200)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+    data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                                {
+
+    };
+    data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                {
+SStack("Block",1),SStack("Shieldy shielder",1), SStack("FullImmuneToSnow",1)
+    };
+    data.traits = new List<CardData.TraitStacks>
+
+{
+        CreateTraitStack("Vigilant", 1)
+};
+
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Shogun", "General Frost")
+.SetSprites("THE SHOGUN.png", "THE SHOGUN BG.png")
+.SetStats(80, 5, 6)
+.WithCardType("BossSmall")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                           {
+SStack("Demonize",2)
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                           {
+           SStack("On turn Row Swap",1), SStack("ImmuneToSnow",1),SStack("ShowguntoShowgun",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+    CreateTraitStack("Vigilant", 2)
+};
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Frost Core", "Frost Core")
+.SetSprites("FROSTCORE.png", "FROSTCORE BG.png")
+.SetStats(80, 1, 4)
+.WithCardType("BossSmall")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                               {
+SStack("Demonize",1)
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                               {
+     SStack("ShogunPhase2",7),SStack("Hit All Enemies",1),SStack("On turn Row Swap",1), SStack("ImmuneToSnow",1),SStack("FullImmuneToInk",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+  
+};
+
+})
+);
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Rusher", "Rusher")
+.SetSprites("FROSTCORE1.png", "FROSTCORE BG.png")
+.SetStats(60, 2, 3)
+.WithCardType("BossSmall")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                   {
+
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                   {
+            SStack("haste",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+    CreateTraitStack("Vigilant", 1)
+};
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Torcherer", "Torcherer")
+.SetSprites("FROSTCORE2.png", "FROSTCORE BG.png")
+.SetStats(60, 4, 6)
+.WithCardType("BossSmall")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                       {
+SStack("Burnage",8)
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                       {
+         SStack("On turn Row Swap",1), SStack("ImmuneToSnow",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+  CreateTraitStack("Vigilant", 1)
+};
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Ekahaka", "Ekahaka")
+.SetSprites("FROSTCORE3.png", "FROSTCORE BG.png")
+.SetStats(60, 2, 9)
+.WithCardType("BossSmall")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                           {
+SStack("Frost",4)
+
+};
+data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                           {
+        SStack("On turn Row Swap",1)
+};
+data.traits = new List<CardData.TraitStacks>
+
+{
+    CreateTraitStack("Vigilant", 2),CreateTraitStack("Barrage", 1)
+};
+
+})
+);
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Asign", "A Sign")
+.SetSprites("MRSIGN.png", "MRSIGN BG.png")
+.SetStats(null, null, 0)
+.WithCardType("Clunker")
+.WithText("Prepare for enemies like this, next wave is a full board of them, Goodluck! <3 - Dev, Sunny")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+  data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                               {
+
+
+};
+  data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                               {
+        SStack("Scrap",1)
+};
+  data.traits = new List<CardData.TraitStacks>
+
+{
+   
+};
+
+})
+);
+
+        cards.Add(
+new CardDataBuilder(this).CreateUnit("Scrappy Ooba", "0-BA")
+.SetSprites("SCRAPYOOBA.png", "SCRAPYOOBA BG.png")
+.SetStats(null, null, 0)
+.WithCardType("Clunker")
+.WithValue(400)
+.SubscribeToAfterAllBuildEvent(delegate (CardData data)
+
+{
+
+  data.attackEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                                                 {
+
+
+};
+  data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
+                                                 {
+        SStack("Scrap",3),SStack("When Hit Apply Snow To Attacker",2)
+};
+  data.traits = new List<CardData.TraitStacks>
+
+  {
+
+  };
+
+})
+);
 
 
         //CHARMS--------------------------------------------------------------------------------------------------------
@@ -26806,8 +29697,140 @@ trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Hangry") };
 }
 ));
 
+        traitEffects.Add(new TraitDataBuilder(this)
+.Create("Demonhitter")
+.SubscribeToAfterAllBuildEvent(
+(trait) =>
+{
+trait.keyword = Get<KeywordData>("demonhit");
+trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Demonize hitters") };
+}));
+
+        traitEffects.Add(new TraitDataBuilder(this)
+.Create("Snowhitter")
+.SubscribeToAfterAllBuildEvent(
+(trait) =>
+{
+  trait.keyword = Get<KeywordData>("snowhit");
+  trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Snow hitters") };
+}));
+
+        traitEffects.Add(new TraitDataBuilder(this)
+.Create("Burnagehitter")
+.SubscribeToAfterAllBuildEvent(
+(trait) =>
+{
+trait.keyword = Get<KeywordData>("burnagehit");
+trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Burnage hitters") };
+}));
+
+
+        traitEffects.Add(new TraitDataBuilder(this)
+.Create("Reliable")
+.SubscribeToAfterAllBuildEvent(
+(trait) =>
+{
+    trait.keyword = Get<KeywordData>("reliable");
+    trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Super Ace") };
+}));
+
+
+
+        traitEffects.Add(new TraitDataBuilder(this)
+.Create("Vigilant")
+.SubscribeToAfterAllBuildEvent(
+(trait) =>
+{
+    trait.keyword = Get<KeywordData>("turnbased");
+    trait.effects = new StatusEffectData[] { Get<StatusEffectData>("Impatient"), Get<StatusEffectData>("Impatient3") };
+}));
+
+
+        
 
         keywords = new List<KeywordDataBuilder>();
+
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("turnbased")
+.WithTitle("Vigilant")
+.WithShowName(true)
+.WithDescription("Count down <keyword=counter> when the enemy moves, or redraw bell is hit.")
+.WithCanStack(true)
+);
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("reliable")
+.WithTitle("Reliable")
+.WithShowName(true)
+.WithDescription("When drawing a new hand, this card will always appear.")
+.WithCanStack(false)
+);
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("multiart")
+.WithTitle("Multi-Art")
+.WithShowName(true)
+.WithDescription("This card can randomly have a different sprite. | Can only occur at the start of a new run :D")
+.WithCanStack(false)
+);
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("moved")
+.WithTitle("Repositioned")
+.WithShowName(true)
+.WithDescription("1. When a card is dragged to a different slot. 2. When a card shoves another card to different slot. | If the card moves to the front because the slot was cleared it is not counted. " +
+"Yank, Shove, Boop, and Swap also bypass this.")
+.WithCanStack(false)
+);
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("burnagehit")
+.WithTitle("Burnage Enhancement")
+.WithShowName(true)
+.WithDescription("On hit, apply <keyword=burnage>")
+.WithCanStack(true)
+);
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("snowhit")
+.WithTitle("Snowy Enhancement")
+.WithShowName(true)
+.WithDescription("On hit, apply <keyword=snow>")
+.WithCanStack(true)
+);
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("note")
+.WithTitle("Note")
+.WithShowName(true)
+.WithDescription("When Tano Shi copies an ability, she needs to be moved to help the game register that she has copied an effect, preferbly out of the row she's currently on.| Sorry for the inconvenience!")
+.WithCanStack(false)
+);
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("specialty")
+.WithTitle("Specialty")
+.WithShowName(true)
+.WithDescription("Obtain a special card specific to this character")
+.WithCanStack(false)
+);
+
+        keywords.Add(
+new KeywordDataBuilder(this)
+.Create("demonhit")
+.WithTitle("Demonizer")
+.WithShowName(true)
+.WithDescription("On hit, apply <keyword=demonize>")
+.WithCanStack(true)
+);
 
         keywords.Add(
 new KeywordDataBuilder(this)
@@ -26859,7 +29882,7 @@ new KeywordDataBuilder(this)
  .Create("bind")
  .WithTitle("Binded")
  .WithShowName(true)
- .WithDescription("Does not leave your hand when played | This effect cannot be removed.")
+ .WithDescription("Does not leave your hand when played | This effect cannot be removed and cannot be crowned.")
  .WithCanStack(false)
  );
 
@@ -27717,7 +30740,7 @@ new KeywordDataBuilder(this)
        "Wake up","Peppereaper", "DragonflamePepper", "Peppering", "SpiceStones", "IceShard", "FoggyBrew","Blingo"));
 
     RewardPool ChaemPool = CreateRewardPool("CandyItemPool", "Charms", DataList<CardUpgradeData>(
-        "CharmCravings", "CharmSweettooth", "CharmSweetStart", "CharmMaid" ,"CardUpgradeInk", "CardUpgradeSpice", "CardUpgradeShroom", "CardUpgradeBom", "CardUpgradeOverload", "CardUpgradeTeethWhenHit", "VendyShieldCharm"
+        "CharmCravings", "CharmSweettooth", "CharmSweetStart", "CharmMaid" , "CardUpgradeSpice", "CardUpgradeShroom", "CardUpgradeBom", "CardUpgradeOverload", "CardUpgradeTeethWhenHit", "VendyShieldCharm"
     ));
 
 
@@ -27798,7 +30821,7 @@ new KeywordDataBuilder(this)
     UnityEngine.Object.DontDestroyOnLoad(gameObject);                                //GameObject may be destroyed if their scene is unloaded. This ensures that will never happen to our gameObject
     gameObject.name = "Player (goobers.WitchTribe)";                                      //For comparison, the clunkmaster character is named "Player (Clunk)"
     data.characterPrefab = gameObject.GetComponent<Character>();
-    data.leaders = DataList<CardData>("Kase", "Paralz", "Scrya", "Allbutone");
+    data.leaders = DataList<CardData>("Kase", "Paralz", "Scrya", "Allbutone", "Amber", "Miku");
 
     Inventory inventory = new Inventory();
     inventory.deck.list = DataList<CardData>("SapphireGen", "RubyeGen", "JadeGen", "Icy Spell", "Frosty Spell", "Silencer Spell", "Essence Container",
@@ -27810,16 +30833,18 @@ new KeywordDataBuilder(this)
 
     RewardPool unitPool = CreateRewardPool("WitchTribeUnitPool", "Units", DataList<CardData>( //The 
     "Trixy", "Shera", "Breese", "Mimimo", "Lemmysee", "WitchNova", "WitchBiji", "WitchDimona", "Charmy", "Esber", "Ramel", "Moorhsum", "Veiled One", "Chingle", "Lea", "Royal Witch", "Acorny",
-    "Aprecica", "Foxox", "WitchZula", "Fey", "Bebe", "Enna", "Serraphin", "Bilizi", "Ekahara", "Shimo", "Yuu Yuu", "5G-S", "Fungialolopio", "Gemyni", "Horrid Log"));
+    "Aprecica", "Foxox", "WitchZula", "Fey", "Bebe", "Enna", "Serraphin", "Bilizi", "Ekahara", "Shimo", "Yuu Yuu", "5G-S", "Fungialolopio", "Gemyni", "Horrid Log",
+    "FirefistWitch", "Divish", "Ufio", "Forgo", "Eraness", "Permia", "Paseereree", "Mihiya"));
 
     RewardPool itemPool = CreateRewardPool("WitchTribeItemPool", "Items", DataList<CardData>(
     "Rose Spell", "Nightshade Spell", "Chained Blade", "Reckless Healing", "Corrupted Hail", "Bagged Weakening Powder", "Berry Potion", "Berry Enchantment", "Enrage", "Furious Infusion", "Unstable Shroom Farm",
     "Shroom Catalyst", "Comforting Jade", "Energizing Sapphire", "Blaze Green Tea", "Barricade", "Barrier", "Stalagmite Pierce", "Bottled Energy", "Halved Snowcake", "Energy Discharge", "Putty", "NutshellCake"
     , "Zapitus", "THUNDER", "Shroomy Scythe", "Lightning Sickle", "Last Resort", "Final Strike", "Heavy Haze", "Almighty Gust", "Hurricane", "Swapy", "Furia", "Bomby Bibidity", "Electro Converter", "Universal Miststation",
-    "Magical Bling Bank", "Chompy", "DragonflamePepper", "IceShard", "NoomlinBiscuit", "NutshellCake", "ZoomlinWafers"));
+    "Magical Bling Bank", "Chompy", "DragonflamePepper", "IceShard", "NoomlinBiscuit", "NutshellCake", "ZoomlinWafers","Snowman Attack", "Gunpower Throw", "Spice Dagger", "Ghost Spell", "Fire Storm", "GIANT ROCK", 
+    "Rush Spell", "Frenzy Spell", "Bomba Bomba", "Fire Spell", "Ghostflame Spell", "Smoke Machine", "Assist Cato"));
 
     RewardPool ChaemPool = CreateRewardPool("WitchTribeItemPool", "Charms", DataList<CardUpgradeData>(
-         "CardUpgradeInk", "CardUpgradeSpice", "CardUpgradeShroom", "CardUpgradeBom", "CardUpgradeOverload", "CardUpgradeTeethWhenHit", "CardUpgradeConsumeOverload"
+          "CardUpgradeSpice", "CardUpgradeShroom", "CardUpgradeBom", "CardUpgradeOverload", "CardUpgradeTeethWhenHit", "CardUpgradeConsumeOverload"
         , "CardUpgradeHeartburn",  "CardUpgradeShellBecomesSpice"
          
     ));
@@ -28059,7 +31084,7 @@ new CardDataBuilder(this).CreateUnit("Shellgi", "Shellgi")
           {
 
                   SStack("Increase Effect self when hit",2),
-                  SStack("On Card Played Apply Shell To Allies",2),
+                  SStack("NEW SHELLER",2),
                   SStack("Shell",25),
 
                 };
@@ -28248,6 +31273,10 @@ new CardDataBuilder(this).CreateUnit("PotionFrenzyI", "Potion of Frenzy")
 
 
  };
+    data.traits = new List<CardData.TraitStacks>
+    {
+         CreateTraitStack("Energyshellic", 1)
+    };
 })
 );
 
@@ -30050,7 +33079,7 @@ new CardDataBuilder(this).CreateItem("MMSN2", "*Clap Clap* Assistance Girls <3")
    );
         cards.Add(
  new CardDataBuilder(this).CreateUnit("Chocobery", "Choco Shorcake")
- .SetStats(5, 4, 5)
+ .SetStats(5, 4, 4)
  .SetSprites("CHOCO.png", "CHOCO BG.png")                                             //Shade Snake has 4 health, 3 attack, and no timer.
 .WithCardType("Summoned")                                      //All summons are "Summoned". This line is necessary.
  .WithFlavour("")
@@ -30059,7 +33088,7 @@ new CardDataBuilder(this).CreateItem("MMSN2", "*Clap Clap* Assistance Girls <3")
      
      data.startWithEffects = new CardData.StatusEffectStacks[] //Manually set Shade Serpent's effects to the desired effect... when the time is right.
     {
-        SStack("Increase Effects To FrontAlly",1)
+        SStack("Increase Effects To FrontAlly",2)
 
      };
      data.traits = new List<CardData.TraitStacks>
@@ -31332,7 +34361,7 @@ new CardDataBuilder(this).CreateItem("Time out", "Time out guys :3")
 .SetStats(null, null)
 .WithFlavour("No time out???")
 .WithCardType("Item")
-.NeedsTarget(false)
+.NeedsTarget(true)
 .CanPlayOnBoard(false)
 .CanPlayOnHand(false)
 .CanPlayOnFriendly(false)
@@ -31343,8 +34372,12 @@ new CardDataBuilder(this).CreateItem("Time out", "Time out guys :3")
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
 
 {
-
-
+    data.targetConstraints = new TargetConstraint[]
+   {
+        new TargetConstraintCounterMoreThan()
+        {value = 10000 }
+   };
+    data.crownSlots = -100;
     data.uses = 1000;
  data.startWithEffects = new CardData.StatusEffectStacks[]
              {
@@ -31509,7 +34542,7 @@ new CardDataBuilder(this).CreateItem("Double Muffin", "Heavily Sugared Brownie")
         cards.Add(
 new CardDataBuilder(this).CreateUnit("Cabinet", "Service Cabinet")
 .SetSprites("CABINET.png", "CABINET BG.png")
-.SetStats(null, null, 0)
+.SetStats(null, null, 4)
 .WithCardType("Clunker")
 .WithValue(90)
 .SubscribeToAfterAllBuildEvent(delegate (CardData data)
@@ -32296,17 +35329,44 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
         return Task.CompletedTask;
     }
 
-    
+    private void SpecialMiku()
+
+    {
+        if (References.PlayerData.inventory.deck.FirstOrDefault((CardData c) => c.name == "goobers.Miku") != null)
+
+        {
+            References.PlayerData.inventory.deck.Add(Get<CardData>("goobers.Mikus staff").Clone());
+
+        }
+    }
+
+
+
+    public static SpriteAtlas Cards;
+    public static SpriteAtlas UI;
 
     [ConfigItem(true, null, "Custom Battles")]
 
     public bool toggleCustomBattles = true;
 
+    [ConfigItem(true, null, "Custom Vanquish Battle")]
+
+    public bool toggleCustomFinalBattle = true;
+
     public override void Load()
     {
         Events.OnSceneLoaded += SceneLoaded;
         Events.OnSceneLoaded += SceneLoaded2;
-        Events.OnSceneLoaded += SceneLoaded3; 
+        Events.OnSceneLoaded += SceneLoaded3;
+
+        HarmonyInstance.PatchAll(typeof(AddressablesHandler));
+        if (!Addressables.ResourceLocators.Any(r => r is ResourceLocationMap map && map.LocatorId == Goobers2.AddressablesHandler.CatalogPath))
+            Addressables.LoadContentCatalogAsync(Goobers2.AddressablesHandler.CatalogPath).WaitForCompletion();
+        Cards = (SpriteAtlas)Addressables.LoadAssetAsync<UnityEngine.Object>($"Assets/friendlygoobers/Sprites/spritesheet.spriteatlas").WaitForCompletion();
+        UI = Addressables.LoadAssetAsync<SpriteAtlas>($"Assets/hope.wildfrost.mymod/UI.spriteatlas").WaitForCompletion();
+        
+
+
 
         if (!preLoaded) { 
             
@@ -32314,17 +35374,35 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
             AshiAssets();
             CreateModAssetsCafeUnits();
             CreateModAssetsWitch();
+           
+
 
 
         }
         base.Load();
         {
+
+            TargetConstraintHasStatusType noUnfrenzy = ScriptableObject.CreateInstance<TargetConstraintHasStatusType>();
+            noUnfrenzy.name = "No Unfrenzy";
+            noUnfrenzy.statusType = "unfrenzy";
+            TryGet<StatusEffectData>("MultiHit").targetConstraints = new TargetConstraint[]
+                        {
+
+       new TargetConstraintHasStatusType(){not = true,statusType="unfrenzy"},  
+
+            };
+
+
             Events.OnMinibossIntro += VFXHelper.MinibossIntro;
 
             Events.OnCardDataCreated += RandomSprite;
             Events.OnCardDataCreated += RandomSprite2;
+            Events.OnCardDataCreated += MikuSprites;
 
             Events.OnCampaignGenerated += AddEnemyToBattle;
+            Events.OnPreCampaignPopulate += SpecialMiku;
+
+
 
             blank_pool = CreateRewardPool("ThisIsAPool", "Units", new DataFile[18] { Get<CardData>("Inkabom"), Get<CardData>("Sunray"), Get<CardData>("M1"),
             Get<CardData>("Hateu"), Get<CardData>("Theinfested"), Get<CardData>("Momo"), Get<CardData>("Yra"), Get<CardData>("Tala"),
@@ -32336,12 +35414,14 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
 
             FinalFightEffectSwap();
             ReunlockData();
+            
 
             CreateLocalizedStrings();
 
             InBattleShopSequence.DefineStrings(); 
             Events.OnEntityKilled += TootooKill;
             Events.OnEntityKilled += DefeatShopkeeper;
+           
 
 
             this.Get<CardData>("Blue").traits = new List<CardData.TraitStacks>
@@ -32349,7 +35429,9 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
                 CreateTraitStack("Hypernova", 1)
                                                     };
 
-       
+
+     
+
 
 
             EnemyBattles.list = new List<(int tier, BattleDataEditor bdEditor)>();
@@ -32560,11 +35642,42 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
 
                 ));
 
+            EnemyBattles.list.Add( // test code. delete
+                              (
+                              tier: 8,
+                              new BattleDataEditor(this, "Shogun", goldGivers: 0)
+              .SetSprite("BUGICON.png")
+              .SetNameRef("A Showdown with the Shogun")
+              .EnemyDictionary(('A', "Ashigari"), ('B', "Tachis"), ('C', "Tackler"), ('D', "Yarigari"), ('E', "Archer"), 
+              ('F', "Guardianr"), ('G', "Grappler"), ('H', "Shinobi"), ('I', "Shielder"), ('J', "Scrappy Ooba"), ('Y', "Asign"),('Z', "Shogun"))
+              .StartWavePoolData(0, "Wave 1: Intro")
+              .ConstructWaves(4, 0, "YABB","BYAB")
+              .StartWavePoolData(1, "Wave 2: BAZZZZ!!")
+              .ConstructWaves(8, 1, "AABBCCEA", "BABACEEB")
+              .StartWavePoolData(2, "Wave 3: BAZZZZ!!")
+              .ConstructWaves(8, 2, "FFDBIHAG", "FFBDHICG")
+              .StartWavePoolData(3, "Wave 4: BAZZZZ!!")
+              .ConstructWaves(8, 3, "FJCCGGIH", "CCJHHIEG")
+              .StartWavePoolData(4, "Wave 5: BAZZZZ!!")
+              .ConstructWaves(8, 4, "CCIIZGB")
+              .ToggleBattle(true)
+              .AddBattleToLoader().LoadBattle(8, exclusivity: BattleEditor.BattleStack.Exclusivity.removeUnmodded)
+              .GiveMiniBossesCharms(new string[] { "Shogun" }, "CardUpgradeFrosthand", "CardUpgradeBom", "CardUpgradeSnowball")
+
+              ));
+
             foreach ((int tier, BattleDataEditor bdEditor) in EnemyBattles.list)
             {
          
                 bdEditor.ToggleBattle(this.toggleCustomBattles);
             }
+
+            foreach ((int tier, BattleDataEditor bdEditor) in EnemyBattles.list)
+            {
+
+                bdEditor.ToggleBattle(this.toggleCustomBattles && (tier != 8 || toggleCustomFinalBattle));
+            }
+
 
             // We have to unhook this in Unload
             ConfigManager.GetConfigSection(this).OnConfigChanged += ToggleBattlesOnConfigChanged;
@@ -32591,8 +35704,6 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
     }
 
 
- 
-
     void ToggleBattlesOnConfigChanged(ConfigItem item, object value)
     {
         foreach ((int tier, BattleDataEditor bdEditor) in EnemyBattles.list)
@@ -32603,9 +35714,9 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
                 continue;
             }
 
-            if (item.fieldName == nameof(this.toggleCustomBattles) && value is bool on)
+           
             {
-                bdEditor.ToggleBattle(this.toggleCustomBattles);
+                bdEditor.ToggleBattle(this.toggleCustomBattles && (tier != 8 || toggleCustomFinalBattle));
             }
         }
     }
@@ -32660,6 +35771,13 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
     public override void Unload()
     {
 
+        TryGet<StatusEffectData>("MultiHit").targetConstraints = new TargetConstraint[]
+                     {
+
+       new TargetConstraintHasStatusType(){not = true,statusType="unfrenzy"},
+
+         };
+
         Events.OnModLoaded -= add_pools_extra;
 
         Events.OnSceneLoaded -= SceneLoaded;
@@ -32671,6 +35789,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
 
         Events.OnCardDataCreated -= RandomSprite;
         Events.OnCardDataCreated -= RandomSprite2;
+        Events.OnCardDataCreated -= MikuSprites;
 
         Events.OnEntityKilled -= TootooKill;
         Events.OnEntityKilled -= DefeatShopkeeper;
@@ -32682,6 +35801,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
                                                     };
         Events.OnMinibossIntro -= VFXHelper.MinibossIntro;
 
+       
 
         GameMode gameMode = Get<GameMode>("GameModeNormal");
         gameMode.classes = RemoveNulls(gameMode.classes); //Without this, a non-restarted game would crash on tribe selection
@@ -32995,7 +36115,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
             yield return Remove();
         }
     }
- 
+
 
     public class StatusEffectInstantTutor : StatusEffectInstant
     {
@@ -33012,6 +36132,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
         public StatusEffectInstantSummon summonCopy;
         public CardData.StatusEffectStacks[] addEffectStacks;
         public LocalizedString title;
+        public bool addToDeck;
 
         private CardContainer _cardContainer;
         private GameObject _gameObject;
@@ -33023,8 +36144,6 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
 
         public override IEnumerator Process()
         {
-
-
             _sequence = FindObjectOfType<CardPocketSequence>(true);
             var cc = (CardControllerSelectCard)_sequence.cardController;
             cc.pressEvent.AddListener(ChooseCard);
@@ -33038,7 +36157,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
             CinemaBarSystem.In();
             CinemaBarSystem.SetSortingLayer("UI2");
             if (!title.IsEmpty)
-            CinemaBarSystem.Top.SetPrompt(title.GetLocalizedString(), "Select");
+                CinemaBarSystem.Top.SetPrompt(title.GetLocalizedString(), "Select");
             _sequence.AddCards(container);
             yield return _sequence.Run();
 
@@ -33087,7 +36206,19 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
             summonCopy.targetSummon.summonCard = cardData;
             summonCopy.withEffects = [.. addEffectStacks.Select(s => s.data)];
             ActionQueue.Stack(new ActionApplyStatus(target, target, summonCopy, count));
+
+            AddToDeck(cardData);
+
             _selected = null;
+        }
+
+        private void AddToDeck(CardData cardData)
+        {
+            if (!addToDeck)
+                return;
+
+            References.PlayerData.inventory.deck.Add(cardData);
+            Events.InvokeEntityShowUnlocked(_selected);
         }
 
         private CardContainer GetCardContainer()
@@ -33132,7 +36263,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
             amount = amount == 0 ? customCardList.Length : amount;
             foreach (var cardName in InPettyRandomOrder(customCardList).Take(amount))
             {
-                var cardData = Goobers.Instance.TryGet<CardData>(cardName).Clone();
+                       var cardData = Goobers.Instance.TryGet<CardData>(cardName).Clone();
                 var card = CardManager.Get(cardData, Battle.instance.playerCardController, References.Player,
                     true,
                     true);
@@ -33207,9 +36338,6 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
             parentObject.GetOrAdd<ScrollToNavigation>().scroller = scroller; // Scroll with controllers
             parentObject.GetOrAdd<TouchScroller>().scroller = scroller; // Scroll with touchscreen
         }
-
-
-
     }
 
     public class StatusEffectEthereal : StatusEffectData
@@ -33253,14 +36381,7 @@ new CardDataBuilder(this).CreateUnit("Cuppy", "Cuppy")
     }
 
 
-    internal class StatusEffectWhileActiveXBoostableScriptable : StatusEffectWhileActiveX
-    {
-        public override int GetAmount(Entity entity, bool equalAmount = false, int equalTo = 0)
-        {
-            var i = scriptableAmount ? GetAmount() : 1;
-            return base.GetAmount(entity, equalAmount, equalTo) * i;
-        }
-    }
+   
 
     internal class TargetConstraintLeftmostItemInHand : TargetConstraint
     {
@@ -33661,35 +36782,86 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
 
     public class StatusEffectJolted : StatusEffectData
     {
+        public bool cancelTransformBossAttacks = true;
+
         public override void Init()
         {
-            base.PreCardPlayed += Check;
+            PreCardPlayed += CheckPreCardPlay;
+            PreAttack += CheckTransformBoss;
         }
 
         public override bool RunPreCardPlayedEvent(Entity entity, Entity[] targets)
         {
-            if (entity == target)
-            {
-                return true;
-            }
-
-            return false;
+            if (!target.enabled)
+                return false;
+            return entity == target;
         }
 
-        public IEnumerator Check(Entity entity, Entity[] targets)
+        private IEnumerator CheckPreCardPlay(Entity entity, Entity[] targets)
         {
+            if (!target || !target.alive)
+                yield break;
 
-            Hit hit2 = new Hit(entity, entity, count)
-            {
-                canRetaliate = false,
-                damageType = "jolted"
-            };
-                     VFXHelper.VFX.TryPlayEffect("zipzap", target.transform.position, 1f * target.transform.lossyScale);
+       
+            VFXHelper.VFX.TryPlayEffect("zipzap", target.transform.position, 1f * target.transform.lossyScale);
             VFXHelper.SFX.TryPlaySound("JOLTSOUND1");
             target.curveAnimator.Ping();
             yield return new WaitForSeconds(0f);
             yield return Sequences.Wait(0.2f);
-            yield return hit2.Process();
+            yield return new Hit(applier, target, count)
+            {
+                canRetaliate = false,
+                damageType = "jolted",
+                countsAsHit = true
+            }.Process();
+        }
+
+        public override bool RunPreAttackEvent(Hit hit)
+        {
+            if (hit.attacker != target)
+                return false;
+
+            if (!target.alive)
+                return true;
+
+            if (!cancelTransformBossAttacks)
+                return false;
+
+            if (target.hp.current > 0 || target.FindStatus("Scrap")?.count > 0)
+                return false;
+
+            if (target.statusEffects.All(t => t.type != "nextphase"))
+                return false;
+  
+            return ActionQueue.GetActions().Any(a => a is ActionChangePhase phase && phase.entity == target);
+        }
+
+        private static IEnumerator CheckTransformBoss(Hit hit)
+        {
+            hit.countsAsHit = false;
+            hit.nullified = true;
+            hit.trigger = null;
+            yield break;
+        }
+
+        public override bool CanTrigger()
+        {
+            var result = false;
+            if (target.enabled)
+                result = !affectedBySnow || (!target.IsSnowed && !target.paused);
+
+            return result;
+        }
+
+        public override int GetAmount()
+        {
+            if (!target)
+                return 0;
+
+            if (!canBeBoosted)
+                return count;
+
+            return Mathf.Max(0, Mathf.RoundToInt((count + target.effectBonus) * target.effectFactor));
         }
     }
     public class StatusEffectInstantSwapRows : StatusEffectInstant
@@ -33816,8 +36988,710 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
 
 
 
+    public class StatusEffectGEM : StatusEffectData
+    {
+        public override bool HasStackRoutine => true;
+        public override IEnumerator StackRoutine(int stacks)
+        {
+            yield return EXPChangedEvent(target, type);
+        }
+        public override IEnumerator RemoveStacks(int amount, bool removeTemporary)
+        {
+            yield return base.RemoveStacks(amount, removeTemporary);
+            yield return EXPChangedEvent(target, type);
+        }
+
+        //Creating a new event protocol, similar to what happens with OnCardMove, etc.
+        public static IEnumerator EXPChangedEvent(Entity entity, string type)
+        {
+            //This code is similar to most X-Event methods in StatusEffectSystem
+            StatusEffectSystem.eventRoutineCount++;
+            StatusEffectSystem.activeEffects.Freeze();
+            int c = StatusEffectSystem.activeEffects.Count;
+            for (int i = c - 1; i >= 0; i--)
+            {
+                int count = StatusEffectSystem.activeEffects.Count;
+                if (count < c)
+                {
+                    i -= c - count;
+                    c = count;
+                }
+
+                if (i < 0)
+                {
+                    break;
+                }
+
+                StatusEffectData statusEffectData = StatusEffectSystem.activeEffects[i];
+                if (statusEffectData is IEXPListener se && statusEffectData.target != null && se.RunEXPChanged(entity, type))
+                {
+                    yield return se.EXPChangedRoutine(entity, type);
+                }
+            }
+            StatusEffectSystem.activeEffects.Thaw();
+            StatusEffectSystem.eventRoutineCount--;
+            yield return Sequences.Null();
+        }
+    }
+
+    //Interfaces!
+    //Interfaces are contracts that you can assign to classes. Classes implementing interfaces must have the interfaces properties/methods
+    public interface IEXPListener
+    {
+        bool RunEXPChanged(Entity entity, string type);
+        IEnumerator EXPChangedRoutine(Entity entity, string type);
+
+    }
 
 
+    //Modified WhileActiveX class
+    public class StatusEffectApplyXWhileHavingY : StatusEffectWhileActiveX, IEXPListener
+    {
+        //Add your changes here as well (boostable scriptable amounts, I think)
+
+        public override int GetAmount(Entity entity, bool equalAmount = false, int equalTo = 0)
+        {
+            var i = scriptableAmount ? GetAmount() : 1;
+            return base.GetAmount(entity, equalAmount, equalTo) * i;
+        }
+
+        //-----------------------------------------------------------------------------------------
+
+        bool reverse = false;
+
+        public string targetType; //CHANGE IN BUILDER
+
+
+
+
+        public override void Init()
+        {
+            base.Init();
+            //doPing = false;
+        }
+      
+public override bool RunCardMoveEvent(Entity entity)
+        {
+            if (applyToFlags == ApplyToFlags.Self)
+            {
+                return false; //Generally, this should be true, but in your case, checking for gaining/losing power is more efficient.
+            }
+            if (active)
+            {
+                if (target == entity)
+                {
+                    return true;
+                }
+                CardContainer[] other = containersToAffect.Select((CardContainer a) => a.Group).ToArray();
+                return (entity.containers.ContainsAny(other) || entity.preContainers.ContainsAny(other)
+                    || containersToAffect.ContainsAny(entity.containers) || containersToAffect.ContainsAny(entity.preContainers));
+            }
+            return false;
+        }
+
+        public override bool CanActivate()
+        {
+            bool typePresent = target.statusEffects.Any((effect) => effect.type == targetType);
+            if (typePresent ^ reverse)
+            {
+                return base.CanActivate(); //Last minute change. Probably doesn't do anything
+            }
+            return false;
+        }
+
+        public bool RunEXPChanged(Entity entity, string type)
+        {
+            if (entity == target && type == targetType)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public IEnumerator EXPChangedRoutine(Entity entity, string type)
+        {
+            bool typePresent = entity.statusEffects.Any((effect) => effect.type == type);
+            if (active && (!typePresent ^ reverse))
+            {
+                yield return Deactivate();
+            }
+            else if (!active && (typePresent ^ reverse))
+            {
+                yield return Activate();
+            }
+        }
+    }
+
+    internal class StatusEffectWhileActiveXBoostableScript : StatusEffectWhileActiveX
+    {
+        public override int GetAmount(Entity entity, bool equalAmount = false, int equalTo = 0)
+        {
+            var i = scriptableAmount ? GetAmount() : 1;
+            return base.GetAmount(entity, equalAmount, equalTo) * i;
+        }
+    }
+
+    public class StatusEffectInstantCopyEffectsntext : StatusEffectInstant
+    {
+        [SerializeField]
+        public bool replaceAllEffects = true;
+
+        [SerializeField]
+        [HideIf("replaceAllEffects")]
+        public int replaceEffectNumber;
+
+        public override IEnumerator Process()
+        {
+            yield return replaceAllEffects ? RemoveAllEffects() : RemoveEffect(replaceEffectNumber);
+            yield return AddEffectCopies();
+            if (applier.display is Card card)
+            {
+                card.promptUpdateDescription = true;
+            }
+
+            applier.PromptUpdate();
+            yield return base.Process();
+        }
+
+        public IEnumerator RemoveAllEffects()
+        {
+            foreach (Entity.TraitStacks trait in applier.traits)
+            {
+                trait.count = 0;
+            }
+
+            yield return applier.UpdateTraits();
+            Routine.Clump clump = new Routine.Clump();
+            foreach (StatusEffectData item in applier.statusEffects.Where((StatusEffectData e) => !e.visible))
+            {
+                clump.Add(item.Remove());
+            }
+
+            yield return clump.WaitForEnd();
+        }
+
+        public IEnumerator RemoveEffect(int effectNumber)
+        {
+            StatusEffectData statusEffectData = applier.statusEffects[effectNumber];
+            yield return statusEffectData.Remove();
+        }
+
+        public IEnumerator AddEffectCopies()
+        {
+            List<StatusEffectData> list = target.statusEffects.Where((StatusEffectData e) => e.count > e.temporary && !e.isStatus && e != this).ToList();
+            foreach (Entity.TraitStacks trait in target.traits)
+            {
+                foreach (StatusEffectData passiveEffect in trait.passiveEffects)
+                {
+                    list.Remove(passiveEffect);
+                }
+
+                int num = trait.count - trait.tempCount;
+                if (num > 0)
+                {
+                    applier.GainTrait(trait.data, num);
+                }
+            }
+
+            foreach (StatusEffectData item in list)
+            {
+                yield return StatusEffectSystem.Apply(applier, item.applier, item, item.count - item.temporary);
+            }
+
+            applier.attackEffects = (from a in CardData.StatusEffectStacks.Stack(applier.attackEffects, target.attackEffects)
+                                     select a.Clone()).ToList();
+            yield return applier.UpdateTraits();
+        }
+    }
+
+    
+
+    public class StatusEffectStealthy : StatusEffectData
+    {
+        public bool cardPlayed;
+
+        public override void Init()
+        {
+            base.OnActionPerformed += ActionPerformed;
+        }
+
+        public override bool RunBeginEvent()
+        {
+            target.cannotBeHitCount++;
+            return false;
+        }
+
+        public override bool RunEndEvent()
+        {
+            target.cannotBeHitCount--;
+            return false;
+        }
+
+        public override bool RunCardPlayedEvent(Entity entity, Entity[] targets)
+        {
+            if (!cardPlayed && entity == target && count > 0 )
+            {
+                cardPlayed = true;
+            }
+
+            return false;
+        }
+
+        public override bool RunActionPerformedEvent(PlayAction action)
+        {
+            if (cardPlayed)
+            {
+                return ActionQueue.Empty;
+            }
+
+            return false;
+        }
+
+        public IEnumerator ActionPerformed(PlayAction action)
+        {
+            yield return CountDown();
+        }
+
+        public IEnumerator CountDown()
+        {
+            int amount = 1;
+            Events.InvokeStatusEffectCountDown(this, ref amount);
+            cardPlayed = false;
+            if (amount != 0)
+            {
+                
+                yield return CountDown(target, amount);
+            }
+        }
+    }
+
+
+    public class StatusEffectWeakness : StatusEffectData
+    {
+        public override void Init()
+        {
+            base.OnHit += Hit;
+        }
+
+        public override bool RunHitEvent(Hit hit)
+        {
+            if (hit.Offensive && count > 0)
+            {
+                return hit.target == target;
+            }
+
+            return false;
+        }
+
+        public IEnumerator Hit(Hit hit)
+        {
+            hit.damage += count;
+            yield break;
+        }
+    }
+
+
+    public class StatusEffectBurning : StatusEffectData
+    {
+        public CardAnimation buildupAnimation;
+
+        public bool burning;
+
+        public bool subbed;
+
+        public bool primed;
+        public override void Init()
+        {
+            Events.OnEntityHit += EntityHit;
+            base.OnTurnEnd += DealDamage2;
+            Events.OnPostProcessUnits += Prime;
+            subbed = true;
+        }
+
+     
+
+        public void Unsub()
+        {
+            if (subbed)
+            {
+                Events.OnPostProcessUnits -= Prime;
+                subbed = false;
+            }
+        }
+
+        public void Prime(Character character)
+        {
+            primed = true;
+            Unsub();
+        }
+
+        public override bool RunTurnEndEvent(Entity entity)
+        {
+            if (primed && target.enabled)
+            {
+                return entity == target;
+            }
+
+            return false;
+        }
+
+        public void OnDestroy()
+        {
+            Events.OnEntityHit -= EntityHit;
+            Unsub();
+        }
+
+        public void EntityHit(Hit hit)
+        {
+            if (hit.target == target && hit.BasicHit && hit.Offensive && hit.canRetaliate)
+            {
+                Check();
+            }
+        }
+
+        public void Check()
+        {
+            if (count > 0 && !burning)
+            {
+                ActionQueue.Stack(new ActionSequence(DealDamage())
+                {
+                    fixedPosition = true,
+                    priority = eventPriority,
+                    note = "Burned"
+                });
+                ActionQueue.Stack(new ActionSequence(Clear())
+                {
+                    fixedPosition = true,
+                    priority = eventPriority,
+                    note = "Clear Burns"
+                });
+                burning = true;
+            }
+        }
+
+        public IEnumerator DealDamage()
+        {
+            if (!this || !target || !target.alive)
+            {
+                yield break;
+            }
+
+            HashSet<Entity> targets = new HashSet<Entity>();
+            CardContainer[] containers = target.containers;
+            foreach (CardContainer collection in containers)
+            {
+                targets.AddRange(collection);
+            }
+
+            if ((bool)buildupAnimation)
+            {
+                yield return buildupAnimation.Routine(target);
+            }
+
+            Entity damager = GetDamager();
+            Routine.Clump clump = new Routine.Clump();
+            foreach (Entity item in targets)
+            {
+                Hit hit = new Hit(damager, item, count)
+                {
+                    screenShake = 0.5f,
+                    damageType = "inferno"
+                };
+                clump.Add(hit.Process());
+            }
+
+            VFXHelper.VFX.TryPlayEffect("burninga", target.transform.position, 1f * target.transform.lossyScale);
+            VFXHelper.SFX.TryPlaySound("burnagedmg");
+            target.curveAnimator.Ping();
+            yield return new WaitForSeconds(0f);
+            yield return Sequences.Wait(0.2f);
+
+            clump.Add(Sequences.Wait(0.5f));
+            yield return clump.WaitForEnd();
+        }
+
+        public IEnumerator DealDamage2(Entity entity)
+        {
+            Hit hit = new Hit(GetDamager(), target, 1)
+            {
+                screenShake = 0.25f,
+                damageType = "fire"
+                , countsAsHit= true, canRetaliate=false
+            };
+            VFXHelper.VFX.TryPlayEffect("bdmg", target.transform.position, 1f * target.transform.lossyScale);
+            VFXHelper.SFX.TryPlaySound("burningdmg");
+            yield return hit.Process();
+            yield return Sequences.Wait(0.2f);
+            int amount = 2;
+            Events.InvokeStatusEffectCountDown(this, ref amount);
+            if (amount != 0)
+            {
+                yield return CountDown(entity, amount);
+            }
+        }
+
+        public IEnumerator Clear()
+        {
+            if ((bool)this && (bool)target && target.alive)
+            {
+                yield return Remove();
+                burning = false;
+            }
+        }
+    }
+
+
+    [HarmonyPatch(typeof(TargetConstraintIsUnit), "Check", typeof(CardData))]
+    public class TCPatch
+    {
+        private static bool Prefix(ref bool __result, TargetConstraintIsUnit __instance, CardData targetData)
+        {
+            if (targetData.name != "goobers.MMSN" && targetData.name != "goobers.MMSN2")
+                return true;
+
+            __result = !__instance.not;
+            return false;
+        }
+    }
+
+
+    public class StatusEffectApplyXWhenItemsAttack : StatusEffectApplyX
+    {
+        public Entity attacker;
+        public override void Init()
+        {
+            base.PreAttack += HitCheck;
+        }
+
+        public override bool RunPreAttackEvent(Hit hit)
+        {
+
+            if (target.enabled && target.alive && hit.attacker.owner == target.owner && hit.attacker != target && attacker != null)
+            {
+                attacker = null;
+                return hit.Offensive;
+            }
+
+            return false;
+        }
+
+        public override bool RunPreCardPlayedEvent(Entity entity, Entity[] targets)
+        {
+            if (entity.data.cardType.name == "Item")
+            {
+                attacker = entity;
+                return true;
+
+            }
+
+            return false;
+        }
+    
+    public IEnumerator HitCheck(Hit hit)
+        {
+            return Run(GetTargets(hit));
+        }
+    }
+
+
+    [HarmonyPatch(typeof(Entity), "CanPlayOn", typeof(Entity), typeof(bool))]
+    internal static class EntityPatches
+    {
+        private static bool Prefix(Entity target)
+        {
+            return !Battle.IsOnBoard(target) || target.cannotBeHitCount <= 0;
+        }
+    }
+
+
+    public class StatusEffectMelodyScale : StatusEffectData
+    {
+
+        public override void Init()
+        {
+            base.OnCardPlayed += CardPlayed;
+        }
+
+        public override bool RunCardPlayedEvent(Entity entity, Entity[] targets)
+        {
+            if (entity == target && count > 0)
+            {
+                //cardPlayed = true;
+
+                return !(ActionQueue.GetActions().Any(a => a is ActionTrigger at && at.entity == target));
+
+            }
+
+            return false;
+        }
+
+
+        public IEnumerator CardPlayed(Entity entity, Entity[] targets)
+        {
+            yield return RemoveStacks(1, removeTemporary: false);
+        }
+
+        public override bool RunBeginEvent()
+        {
+            target.effectFactor += 2f;
+            return false;
+        }
+
+        public override bool RunEndEvent()
+        {
+            target.effectFactor -= 2f;
+            return false;
+        }
+    }
+
+    public class StatusEffectMikuSupport : StatusEffectData
+    {
+        public ScriptableAmount scriptableAmount;
+        public override void Init()
+        {
+            base.OnCardPlayed += CardPlayed;
+        }
+
+
+
+
+        public IEnumerator CardPlayed(Entity entity, Entity[] targets)
+        {
+            target.damage.current += (2);
+            target.PromptUpdate();
+            yield return RemoveStacks(1, removeTemporary: false);
+        }
+
+        public override bool RunCardPlayedEvent(Entity entity, Entity[] targets)
+        {
+            if (entity == target && count > 0)
+            {
+                //cardPlayed = true;
+
+                return !(ActionQueue.GetActions().Any(a => a is ActionTrigger at && at.entity == target));
+
+            }
+
+            return false;
+        }
+    }
+
+    public class StatusEffectMikuCharm : StatusEffectData
+    {
+        public ScriptableAmount scriptableAmount;
+        public override void Init()
+        {
+            base.PreTrigger += EntityPreTrigger;
+        }
+
+
+
+        public override bool RunPreTriggerEvent(Trigger trigger)
+        {
+            if (trigger.entity == target)
+            {
+                return trigger.type != "mikucharm";
+            }
+
+            return false;
+        }
+
+
+        public IEnumerator EntityPreTrigger(Trigger trigger)
+        {
+          
+                target.damage.current -= (1);
+                target.PromptUpdate();
+                yield return RemoveStacks(1, removeTemporary: false);
+            
+        }
+        
+
+
+    }
+
+ 
+
+
+    public class StatusEffectAppearOnTopNoMatterWhat : StatusEffectData
+    {
+        public override void Init()
+        {
+            Events.OnCardDraw += Cheat; //Step 1
+
+        }
+
+        public void OnDestroy()
+        { 
+            Events.OnCardDraw -= Cheat;
+        }
+        private void Cheat(int _)
+        {
+            if (target?.containers != null)
+            {
+                CardContainer original = null;
+                if (target.containers.Contains(References.Player.drawContainer)) //Step 2a: in draw
+                {
+                    original = References.Player.drawContainer;
+                }
+                else if (target.containers.Contains(References.Player.discardContainer)) //Step 2b: in discard
+                {
+                    original = References.Player.discardContainer;
+                }
+
+                if (original != null) //Step 3
+                {
+                    original.Remove(target);
+                    References.Player.drawContainer.Add(target);
+                }
+            }
+
+
+        }
+    }
+
+
+
+
+
+    [HarmonyPatch(typeof(WildfrostMod.DebugLoggerTextWriter), nameof(WildfrostMod.DebugLoggerTextWriter.WriteLine))]
+    class PatchHarmony
+    {
+        static bool Prefix() { Postfix(); return false; }
+        static void Postfix() => HarmonyLib.Tools.Logger.ChannelFilter = HarmonyLib.Tools.Logger.LogChannel.Warn | HarmonyLib.Tools.Logger.LogChannel.Error;
+    }
+
+    // find the code that looks like this (class constructor) in your mod
+    // "MyMod" would be replaced with your mod class name
+
+
+    public class TargetConstraintCounterMoreThan : TargetConstraint
+    {
+        [SerializeField]
+        public int value;
+
+        public override bool Check(Entity target)
+        {
+            if (target.data.counter <= value)
+            {
+                return not;
+            }
+
+            return !not;
+        }
+
+        public override bool Check(CardData targetData)
+        {
+            if (targetData.counter <= value)
+            {
+                return not;
+            }
+
+            return !not;
+        }
+    }
+
+   
 
     //ANIMATION STATUS APPLIERS-------------------------------------------------------------------------------------------------------------------------- //ANIMATION STATUS APPLIERS--------------------------------------------------------------------------------------------------------------------------
 
@@ -33828,8 +37702,6 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
     //ANIMATION STATUS APPLIERS--------------------------------------------------------------------------------------------------------------------------
 
     //ANIMATION STATUS APPLIERS--------------------------------------------------------------------------------------------------------------------------
-
-
 
 
 
@@ -33969,15 +37841,12 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
     //ANIMATION STATUS APPLIERS--------------------------------------------------------------------------------------------------------------------------
 
 
-   
 
 
 
 
 
-
-
-    public class TargetModeTaunt : TargetMode   
+        public class TargetModeTaunt : TargetMode   
     {
         public override Entity[] GetPotentialTargets(Entity entity, Entity target, CardContainer targetContainer)
         {
@@ -34278,14 +38147,14 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
                     foreach (var uni in allUnits)
                     {
                         if (uni.data.startWithEffects.ToList()
-                                .FindAll(a => a.data is SpeedEffectData).Count > 0)
+                                .FindAll(a => a.data is HasteEffectData).Count > 0)
                             entities.Add(uni);
                     }
 
                     var orderedEnumerable = entities.OrderBy(delegate (Entity entity)
                     {
                         return -entity.data.startWithEffects.ToList()
-                            .FindAll(a => a.data is SpeedEffectData).Count;
+                            .FindAll(a => a.data is HasteEffectData).Count;
                     });
                     entities = orderedEnumerable.ToList();
                 }
@@ -34294,7 +38163,7 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
                     entities.RemoveAll(delegate (Entity entity)
                     {
                         return entity.data.startWithEffects.ToList()
-                            .FindAll(a => a.data is SpeedEffectData).Count > 0;
+                            .FindAll(a => a.data is HasteEffectData).Count > 0;
                     });
                 }
 
@@ -34357,12 +38226,87 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
 
 
     }
-    public class SpeedEffectData : StatusEffectData
+    public class HasteEffectData : StatusEffectData
     {
     }
 
 
+    public class StatusEffectApplyXWhenCardMovesOnly1 : StatusEffectApplyX
+    {
+        public bool whenSelfMoves;
+        public bool whenAllyMoves;
+        public bool whenEnemyMoves = true;
 
+        private Hit hackyHit;
+
+        public override void Init()
+        {
+            Events.OnEntityMove += CheckMove;
+        }
+        public void OnDestroy()
+        {
+            Events.OnEntityMove -= CheckMove;
+        }
+
+        public void CheckMove(Entity entity)
+        {
+            // Note the || bit has to all be in parentheses
+            if (target.alive && (!this.target.enabled || !entity.enabled))
+                return;
+
+            if (!Battle.IsOnBoard(entity) || StatusEffectApplyXWhenDeployed.WasMovedOnToBoard(entity))
+                return;
+
+            if (ShoveSystem.shovedFrom.Contains(entity))
+            {
+                Debug.LogWarning("LMAO this guy got shoved L: " + entity);
+                return;
+            }
+
+            if (whenSelfMoves && entity == target && HasMoved(entity))
+            {
+                this.hackyHit = (Hit)null;
+                Activate(entity);
+            }
+            if (whenAllyMoves && IsAlly(this.target, entity) && HasMoved(entity))
+            {
+                this.hackyHit = new Hit(this.target, entity);
+                Activate(entity);
+            }
+            if (whenEnemyMoves && IsEnemy(this.target, entity) && HasMoved(entity))
+            {
+                this.hackyHit = new Hit(this.target, entity);
+                Activate(entity);
+            }
+        }
+
+        private void Activate(Entity entity)
+        {
+            if (!target.enabled)
+                return;
+
+            if (contextEqualAmount)
+            {
+                int amount = contextEqualAmount.Get(entity);
+                ActionQueue.Stack(new ActionSequence(this.Run(this.GetTargets(hackyHit), amount)) { note = $"[{entity.name} {name}] {amount}" }, true);
+            }
+            else
+                ActionQueue.Stack(new ActionSequence(this.Run(this.GetTargets(hackyHit))) { note = $"[{entity.name} {name}]" }, true);
+        }
+
+
+        private static bool HasMoved(Entity entity)
+        {
+            return entity.containers != entity.preContainers;
+        }
+
+        private static bool IsAlly(Entity a, Entity b)
+        {
+            return a != b && a.owner.team == b.owner.team;
+        }
+
+        private static bool IsEnemy(Entity a, Entity b) => a.owner.team != b.owner.team;
+    }
     public class StatusEffectApplyXWhenCardMoves : StatusEffectApplyX
     {
         public bool whenSelfMoves;
@@ -34382,7 +38326,8 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
 
         public void CheckMove(Entity entity)
         {
-            if (!this.target.enabled || !entity.enabled)
+            if (!this.target.enabled || !entity.enabled && (target.alive))
+
                 return;
 
             if (whenSelfMoves && entity == target && HasMoved(entity))
@@ -34400,6 +38345,7 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
                 this.hackyHit = new Hit(this.target, entity);
                 Activate(entity);
             }
+           
         }
 
         private void Activate(Entity entity)
@@ -34922,9 +38868,8 @@ public class StatusEffectApplyXToAllyInColumn : StatusEffectApplyXOnCardPlayed
         }
 
     }
-  
- }
 
+}
 
 
 
@@ -34975,6 +38920,46 @@ internal class StatusEffectApplyRandomOnHit : StatusEffectApplyXOnHit
         effectToApply = effectsToapply[r];
     }
 }
+
+
+
+namespace Goobers2
+{
+
+    [HarmonyPatch]
+    public class AddressablesHandler
+    {
+        // Adjust these 3 for different mods
+        public const string spriteAtlasPath = "Assets/friendlygoobers/Sprites/spritesheet.spriteatlas";
+        static WildfrostMod Instance => Goobers.Instance;
+        static SpriteAtlas Sprites => Goobers.Cards;
+
+
+        public static string CatalogFolder => Path.Combine(Instance.ModDirectory, "Windows");
+        public static string CatalogPath => Path.Combine(CatalogFolder, "catalog.json");
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Extensions), nameof(Extensions.ToSprite), typeof(string))]
+   static bool PatchPathToSprite(string path, ref Sprite __result)
+{
+    Debug.LogWarning("oy you talkin to me? " + new DirectoryInfo(path).FullName.Contains(new DirectoryInfo(Instance.ModDirectory).FullName));
+    if (!new DirectoryInfo(path).FullName.Contains(new DirectoryInfo(Instance.ModDirectory).FullName))
+        return true; // the path is not a subfolder of this mod directory
+
+    Debug.LogWarning("aye here's some advice");
+    string filename = Path.GetFileNameWithoutExtension(path);
+    __result = Sprites?.GetSprite(filename);
+
+    Debug.LogWarning((Sprites, __result, path));
+
+    return !__result;
+}
+    }
+
+
+}
+
+
 
 namespace Tutorial6_StatusIcons
 {

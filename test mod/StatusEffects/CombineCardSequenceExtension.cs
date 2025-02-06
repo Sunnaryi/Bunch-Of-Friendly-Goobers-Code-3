@@ -1,25 +1,30 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using HarmonyLib;
 using System.Linq;
 using UnityEngine;
 using static UnityEngine.Rendering.DebugUI;
 
+
+
+[HarmonyPatch(typeof(CombineCardSequence), "Run", typeof(CardData[]), typeof(CardData))]
 public static class CombineCardSequenceExtension
 
-    {
-
+{
     private static IEnumerator Postfix(IEnumerator __result, CombineCardSequence __instance, CardData[] cards, CardData finalCard)
     {
         yield return __result;
-
+        Debug.Log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA WOOORK!");
         if (!finalCard.cardType.miniboss)
-            yield break;
-
+        yield break;
+        Debug.Log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA WOOORK! BUT UNDER");
         var deck = References.PlayerData.inventory.deck;
         if (deck.Remove(finalCard))
             deck.Insert(0, finalCard);
     }
-    public static IEnumerator Run2(this CombineCardSequence seq, List<Entity> cardsToCombine, string resultingCard, bool keepUpgrades, List<CardUpgradeData> extraUpgrades, bool spawnOnBoard, CardContainer row)
+
+
+public static IEnumerator Run2(this CombineCardSequence seq, List<Entity> cardsToCombine, string resultingCard, bool keepUpgrades, List<CardUpgradeData> extraUpgrades, bool spawnOnBoard, CardContainer row)
         {
             CardData cardDataClone = AddressableLoader.GetCardDataClone(resultingCard);
 

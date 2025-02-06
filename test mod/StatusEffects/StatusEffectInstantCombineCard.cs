@@ -150,6 +150,8 @@ internal class StatusEffectInstantCombineCard : StatusEffectInstant
                         oldCards.Add(card);
                         break;
                     }
+
+
                 }
             }
 
@@ -176,10 +178,18 @@ internal class StatusEffectInstantCombineCard : StatusEffectInstant
                     upgrade.Assign(cardDataClone);
                 }
 
-                References.Player.data.inventory.deck.Add(cardDataClone);
-
-
+            if (cardDataClone.cardType.miniboss)
+            {
+                References.Player.data.inventory.deck.Insert(0, cardDataClone);
             }
+
+            else
+            {
+                References.Player.data.inventory.deck.Add(cardDataClone);
+            }
+
+
+        }
 
 
         }
